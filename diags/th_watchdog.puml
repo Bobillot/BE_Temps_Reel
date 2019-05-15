@@ -1,0 +1,26 @@
+@startuml th_watchdog
+
+skinparam monochrome true
+
+'Modifier conception pour retirer stop signal
+'Inutile (Semaphore bloquant tant que pas d'utilité de cette tâche)
+start
+
+while( )
+
+:startWD?;
+note right
+    Synchro sur sémaphore 
+    (try pour ne pas décrémenter, décrementer dans th_move pour stopper)
+end note
+
+:ComRobot::Write(DMB_RELOAD_WD);
+
+:Wait 1s;
+
+endwhile
+
+
+stop
+
+@enduml

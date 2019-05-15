@@ -1,0 +1,58 @@
+@startuml th_get_image_mod
+
+skinparam monochrome true
+
+floating note left  
+    Porposition modif modelisation
+
+    arena shared var 
+
+    Un seul thread pour le calcul de position et l'envoi d'images ?
+end note
+
+start
+
+while ( )
+
+    :démarrerCamera?;
+    note right: sync sémaphore
+    
+    :startEnvoi?;
+    note right 
+        sync sur sémaphore 
+        pe modifier pour que th calib récupère startCam
+        pour factor
+    end note
+
+    :computePosLoc = computePosShared;
+
+    
+    :img = Camera::Grab();
+
+    if (computePosLoc) then (true)
+        'partition computePos {
+            :pos = Img::SearchRobot(img,arena);
+            if (pos) then 
+                :msg = MessagePosition(pos);
+            else (null)
+                :pos = (-1;-1)
+                :msg = MessagePosition(pos);
+            endif
+            :msgToMon!msg;
+        '}
+    else (false)
+
+    endif
+
+    :msgToMon!img;   
+
+    :wait 100ms; 
+    note
+        compute elapsed time since start 
+        if precision needed
+    end note
+endwhile
+
+stop
+
+@enduml

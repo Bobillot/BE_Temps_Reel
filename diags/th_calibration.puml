@@ -1,0 +1,46 @@
+@startuml th_get_image_mod
+
+skinparam monochrome true
+
+floating note left  
+    Porposition modif modelisation
+
+    arena shared var 
+
+    Un seul thread pour le calcul de position et l'envoi d'images 
+end note
+
+start
+
+while ( )
+    :findArena?;
+
+    :stopEnvoi!;
+    note : sem repriseEnvoi
+
+    :img = Camera::Grab();
+    note : assumes function does the mutex part
+
+    :arena = Img::SearchArena(img);
+
+    if (arena) then (null)
+        :msg = new Message(NO_ACK);
+        :messageToMon!msg;
+    else
+        :messageToMon!arena;
+        :arenaOK/NOK?val;
+        if(val) then (true)
+            :arenaShared = arena;
+        else (false)
+            :arenaShared = null;
+        endif
+    endif
+
+    :repriseEnvoi!;
+
+
+endwhile
+
+stop
+
+@enduml

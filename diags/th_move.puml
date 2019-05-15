@@ -1,0 +1,35 @@
+@startuml
+
+title th_move \n
+
+start
+while()
+:semaphore comDemarree?;
+:compteurEchec=0;
+if (Signal Start == true) then (yes)
+elseif (Signal Start with WD == true) then (yes)
+    :donner sémaphore WD;
+endif
+while (Signal Stop == false && compteurEchec > 3) is (no)
+    :wait 100ms;
+    if(move==ALREADYREAD) then (yes)
+    :compteurEchec++;
+    else (no)
+        if (move==STOP) then (yes)
+            :robot.Write(Stop());
+        elseif (move==GAUCHE) then (yes) 
+            :robot.Write(GoLeft());
+        elseif (move==DROITE) then (yes) 
+            :robot.Write(GoRight());
+        elseif (move==AVANT) then (yes) 
+            :robot.Write(GoForward());
+        elseif (move==ARRIERE) then (yes) 
+            :robot.Write(GoBackward());
+        endif
+    :compteurEchec=0;
+    :move = ALREADYREAD;
+    endif
+endwhile
+endwhile
+stop
+@enduml

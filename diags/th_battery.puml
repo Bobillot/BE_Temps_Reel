@@ -1,0 +1,16 @@
+@startuml
+
+title th_battery \n
+
+start
+
+while ()
+  :comDemarree?;
+  :wait 500ms;
+  :level = (MessageBattery*)robot.Write(ComRobot::GetBattery());
+  :monitor.Write(level);
+  
+endwhile
+stop
+
+@enduml

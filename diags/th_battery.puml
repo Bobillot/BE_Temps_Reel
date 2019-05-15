@@ -1,5 +1,6 @@
 @startuml
 
+skinparam monochrome true
 title th_battery \n
 
 start
@@ -8,7 +9,11 @@ while ()
   :comDemarree?;
   :wait 500ms;
   :level = (MessageBattery*)robot.Write(ComRobot::GetBattery());
-  :monitor.Write(level);
+  :msgToMon!level;
+  note 
+    method WriteInQueue
+    in task.cpp
+  endnote
   
 endwhile
 stop

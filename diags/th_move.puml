@@ -1,35 +1,66 @@
 @startuml
 
+skinparam monochrome true
 title th_move \n
 
+
 start
-while()
-:semaphore comDemarree?;
-:compteurEchec=0;
-if (Signal Start == true) then (yes)
-elseif (Signal Start with WD == true) then (yes)
-    :donner sémaphore WD;
-endif
-while (Signal Stop == false && compteurEchec > 3) is (no)
-    :wait 100ms;
-    if(move==ALREADYREAD) then (yes)
-    :compteurEchec++;
-    else (no)
-        if (move==STOP) then (yes)
-            :robot.Write(Stop());
-        elseif (move==GAUCHE) then (yes) 
-            :robot.Write(GoLeft());
-        elseif (move==DROITE) then (yes) 
-            :robot.Write(GoRight());
-        elseif (move==AVANT) then (yes) 
-            :robot.Write(GoForward());
-        elseif (move==ARRIERE) then (yes) 
-            :robot.Write(GoBackward());
-        endif
-    :compteurEchec=0;
-    :move = ALREADYREAD;
+
+floating note right
+WDStarted : bool
+compteurEchec : int
+stopEvent : int //pe modifier avec event flag xenomai polling
+endnote
+
+while ()
+    :comDemarree?;
+    note : syn event flag ?
+    :compteurEchec = 0
+    WDStarted = false ;
+
+    :startRobot?eventFlags;
+    note
+    eventFlags : sans WD, avec WD
+    endnote
+
+    if (eventFlags) then (STARTWD)
+        :startWD!
+        WDStarted = true;
+    else (START)
     endif
-endwhile
+
+    :reset(EventFlags);
+
+    while (compteurEchec < 3 && poll(eventStop) == false) is (true)
+        :wait 100ms;
+        if (move==STOP) then (yes)
+            :err = robot.Write(Stop());
+        elseif (move==GAUCHE) then (yes)
+            :err = robot.Write(GoLeft());
+        elseif (move==DROITE) then (yes)
+            :err = robot.Write(GoRight());
+        elseif (move==AVANT) then (yes)
+            :err = robot.Write(GoForward());
+        elseif (move==ARRIERE) then (yes)
+            :err = robot.Write(GoBackward());
+        endif
+        if (err) then (!ROBOT_OK)
+            :compteurEchec++;
+        endif
+    endwhile (false)
+if(WDStarted) then (true)
+    :stopWD!
+    WDStarted = false;
+endif
+:reset(eventStop);
+
+if (compteurEchec > 3) then (true)
+    :reset(comDemarre);
+    note : pe gérer dans dcom robot
+    :msg = new Message(COMMUNICATION_LOST)
+    msgToMon!msg;
+else (false)
+endif
 endwhile
 stop
 @enduml

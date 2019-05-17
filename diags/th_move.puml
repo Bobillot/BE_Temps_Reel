@@ -12,8 +12,8 @@ stopEvent : int //pe modifier avec event flag xenomai polling
 endnote
 
 while ()
-    :comDemarree?;
-    note : syn event flag ?
+    :comRobotStartEvent?START;
+    note : event flag
     :compteurEchec = 0;
 
     :startRobot?eventFlags;
@@ -37,7 +37,7 @@ while ()
 
     :reset(EventFlags);
 
-    while (compteurEchec < 3 && poll(eventStop) == false) is (true)
+    while (compteurEchec < 3 && eventStop == false) is (true)
         :wait 100ms;
         if (move==STOP) then (yes)
             :err = robot.Write(Stop());
@@ -56,11 +56,16 @@ while ()
     endwhile (false)
     :eventWD!STOP;
     note : passe la val de eventWD à STOP
-:reset(eventStop);
+:eventStop == false;
+note : shrd var, reset après conso event
 
 if (compteurEchec > 3) then (true)
-    :reset(comDemarre);
-    note : pe gérer dans dcom robot
+    :comRobotStartEvent!STOP;
+    note 
+        evite de rerentrer dans le début du thread 
+        si on sait qu'on coupe la com à cause du temps de traitement 
+        de th_com_robot
+    endnote
     :event = CLOSE
     openComRobot!event;
     :msg = new Message(COMMUNICATION_LOST)

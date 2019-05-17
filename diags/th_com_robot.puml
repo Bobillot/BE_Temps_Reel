@@ -16,13 +16,14 @@ while( )
     :err = robot.Open();
         if (err) then (robot_ok)
         :msgSend = new Message(MESSAGE_ANSWER_ACK);
-        :comDemarree!;
+        :comRobotStartEvent!START;
         else
             :msgSend = new Message(MESSAGE_ANSWER_NACK);
         endif
     else (CLOSE)
         :robot.Close();
         :msgSend = new Message(MESSAGE_COM_CLOSED);
+        :comRobotStartEvent!STOP;
         'Check message type
     endif
     :msgToMon!msgSend;

@@ -23,9 +23,13 @@ while ()
 
     if (eventFlags) then (STARTWD)
         :startWD!;
+        :ret = ComRobot::Write(StartWithWD());
     else (START)
+    :ret = ComRobot::Write(StartWithoutWD());
     endif
-
+    
+    if (ret) then (1)
+    
     :msg = new Message(ACK);
 
     :msgToMon!msg;
@@ -55,9 +59,18 @@ while ()
 if (compteurEchec > 3) then (true)
     :reset(comDemarre);
     note : pe gérer dans dcom robot
+    :event = CLOSE
+    openComRobot!event;
     :msg = new Message(COMMUNICATION_LOST)
     msgToMon!msg;
 else (false)
+endif
+else (0)
+    :msg = new Message(NACK);
+
+    :msgToMon!msg;
+
+    :reset(EventFlags);
 endif
 endwhile
 stop

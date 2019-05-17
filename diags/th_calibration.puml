@@ -25,11 +25,11 @@ while ( )
 
     if (arena) then (null)
         :msg = new Message(NO_ACK);
-        :messageToMon!msg;
+        :msgToMon!msg;
     else
         :img = Img::DrawArena(arena);
-        :messageToMon!img;
-        :arenaOK/NOK?val;
+        :msgToMon!img;
+        :ArenaOK/KO?val;
         if(val) then (true)
             :arenaShared = arena;
         else (false)

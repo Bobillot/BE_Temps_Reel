@@ -16,7 +16,7 @@ while( )
     :err = robot.Open();
         if (err) then (robot_ok)
         :msgSend = new Message(MESSAGE_ANSWER_ACK);
-        :comStarted!;
+        :comDemarree!;
         else
             :msgSend = new Message(MESSAGE_ANSWER_NACK);
         endif
@@ -25,7 +25,7 @@ while( )
         :msgSend = new Message(MESSAGE_COM_CLOSED);
         'Check message type
     endif
-    :messageToMon!msgSend;
+    :msgToMon!msgSend;
 endwhile
 stop
 @enduml

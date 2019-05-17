@@ -17,7 +17,6 @@ while( )
         if (err) then (robot_ok)
         :msgSend = new Message(MESSAGE_ANSWER_ACK);
         :comStarted!;
-        :messageFailureCount = 0;
         else
             :msgSend = new Message(MESSAGE_ANSWER_NACK);
         endif

@@ -7,7 +7,6 @@ title th_move \n
 start
 
 floating note right
-WDStarted : bool
 compteurEchec : int
 stopEvent : int //pe modifier avec event flag xenomai polling
 endnote
@@ -15,8 +14,7 @@ endnote
 while ()
     :comDemarree?;
     note : syn event flag ?
-    :compteurEchec = 0
-    WDStarted = false ;
+    :compteurEchec = 0;
 
     :startRobot?eventFlags;
     note
@@ -24,10 +22,13 @@ while ()
     endnote
 
     if (eventFlags) then (STARTWD)
-        :startWD!
-        WDStarted = true;
+        :startWD!;
     else (START)
     endif
+
+    :msg = new Message(ACK);
+
+    :msgToMon!msg;
 
     :reset(EventFlags);
 
@@ -48,10 +49,7 @@ while ()
             :compteurEchec++;
         endif
     endwhile (false)
-if(WDStarted) then (true)
     :stopWD!
-    WDStarted = false;
-endif
 :reset(eventStop);
 
 if (compteurEchec > 3) then (true)

@@ -27,7 +27,8 @@ while ( )
         :msg = new Message(NO_ACK);
         :messageToMon!msg;
     else
-        :messageToMon!arena;
+        :img = Img::DrawArena(arena);
+        :messageToMon!img;
         :arenaOK/NOK?val;
         if(val) then (true)
             :arenaShared = arena;

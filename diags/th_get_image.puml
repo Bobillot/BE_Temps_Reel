@@ -7,7 +7,7 @@ floating note left
 
     arena shared var 
 
-    Un seul thread pour le calcul de position et l'envoi d'images ?
+    Fermeture de la camera dans ce thread ==> attente de la fin des calculs lors du stop
 end note
 
 start

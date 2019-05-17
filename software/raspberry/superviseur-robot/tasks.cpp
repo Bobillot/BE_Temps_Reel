@@ -428,7 +428,7 @@ Message *Tasks::ReadInQueue(RT_QUEUE *queue) {
 void Tasks::UpdateBatteryLevel()
 {
     int rs;
-    MessageBattery *msg;
+    MessageBattery *level;
     
     rt_task_set_periodic(NULL, TM_NOW, 500000000);
     
@@ -442,13 +442,10 @@ void Tasks::UpdateBatteryLevel()
         if (rs == 1) 
         {            
             rt_mutex_acquire(&mutex_robot, TM_INFINITE);
-            msg = (MessageBattery*)robot.Write(ComRobot::GetBattery());
+            level = (MessageBattery*)robot.Write(ComRobot::GetBattery());
             rt_mutex_release(&mutex_robot);
             
-            //modify to use write in queue
-            rt_mutex_acquire(&mutex_monitor, TM_INFINITE);
-            monitor.Write(msg);
-            rt_mutex_release(&mutex_monitor);
+            WriteInQueue(&q_messageToMon,level);
         }
         cout << endl << flush;
     

@@ -445,10 +445,7 @@ void Tasks::UpdateBatteryLevel()
             msg = (MessageBattery*)robot.Write(ComRobot::GetBattery());
             rt_mutex_release(&mutex_robot);
             
-            //modify to use write in queue
-            rt_mutex_acquire(&mutex_monitor, TM_INFINITE);
-            monitor.Write(msg);
-            rt_mutex_release(&mutex_monitor);
+            WriteInQueue(&q_messageToMon,level);
         }
         cout << endl << flush;
     

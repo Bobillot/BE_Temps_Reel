@@ -22,7 +22,7 @@ while ()
 
         if(msgRcv.compareID(MESSAGE_ROBOT_COM_OPEN)) then (true)
 
-            :ouvrirComRobot! ;
+            :openComRobot! ;
 
         else (false)
 
@@ -39,7 +39,7 @@ while ()
                             :findArena! ;
                         else (false)
                             if(msgRcv.compareID(MESSAGE_ROBOT_CAM_ARENA_CONFIRM)) then (true)
-                                :ArenaOk! ;
+                                :ArenaOK! ;
                             else (false)
                                 if(msgRcv.compareID(MESSAGE_ROBOT_CAM_ARENA_INFIRM)) then (true)
                                     :ArenaKO! ;
@@ -80,3 +80,4 @@ stop
 
 
 @enduml
+                                                        

@@ -22,7 +22,8 @@ while ()
     endnote
 
     if (eventFlags) then (STARTWD)
-        :startWD!;
+        :eventWD!START;
+    note : passe la val de eventWD à START
         :ret = ComRobot::Write(StartWithWD());
     else (START)
     :ret = ComRobot::Write(StartWithoutWD());
@@ -53,7 +54,8 @@ while ()
             :compteurEchec++;
         endif
     endwhile (false)
-    :stopWD!
+    :eventWD!STOP;
+    note : passe la val de eventWD à STOP
 :reset(eventStop);
 
 if (compteurEchec > 3) then (true)

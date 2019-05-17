@@ -1,4 +1,4 @@
-@startuml th_get_image_mod
+@startuml th_calibration
 
 skinparam monochrome true
 

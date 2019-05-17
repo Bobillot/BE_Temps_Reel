@@ -8,6 +8,10 @@ floating note left
     arena shared var 
 
     Fermeture de la camera dans ce thread ==> attente de la fin des calculs lors du stop
+
+
+    Variables : 
+        sendImages : bool
 end note
 
 start
@@ -15,17 +19,28 @@ start
 while ( )
 
     :démarrerCamera?;
-    note right: sync sémaphore
+    note : sync sémaphore
+
+    :err = camera.Open();
+    if(err) then (camera_ok)
     
+    :msg = new Message(MESSAGE_ANSWER_ACK);
+    :msgToMon!msg;
+
+    :sendImages = true;
+
+    while (sendImages) is (true)
+    if(eventStopCamera) then (false)
     :startEnvoi?;
-    note right 
+    note 
         sync sur sémaphore 
         pe modifier pour que th calib récupère startCam
         pour factor
     end note
 
-    :computePosLoc = computePosShared;
+    :timeStart = now();
 
+    :computePosLoc = computePosShared;
     
     :img = Camera::Grab();
 
@@ -46,11 +61,29 @@ while ( )
 
     :msgToMon!img;   
 
-    :wait 100ms; 
+    :wait (100ms - (now() - timeStart); 
     note
         compute elapsed time since start 
         if precision needed
     end note
+    'event stopCamera reçu
+    else (true)
+        :err = camera.Close();
+        if(err) then (camera_closed)
+            :sendImages = false;
+            :msg = new Message(MESSAGE_ANSWER_ACK);
+        else
+            :msg = new Message(MESSAGE_ANSWER_NACK);
+        endif
+        :mstToMon!msg;
+    endif
+    endwhile
+
+    else (!camera_ok)
+
+    :msg = new Message(MESSAGE_ANSWER_ACK);
+    :msgToMon!msg;
+    endif
 endwhile
 
 stop

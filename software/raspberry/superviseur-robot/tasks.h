@@ -67,6 +67,7 @@ private:
     RT_EVENT event_startRobot;
     RT_EVENT event_comRobotStartEvent;
     RT_EVENT event_WD;
+    RT_EVENT event_findArena;
     //camera
     RT_EVENT event_arenaValid;
     RT_EVENT event_envoi;

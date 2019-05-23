@@ -601,10 +601,12 @@ void Tasks::receiveFromMon()
 
 void Tasks::Calibration(void *arg) {
     
-    rt_event_wait(find_Arena,0);
+    unsigned long mask_r ;
+    rt_event_wait(event_findArena,MASK_WAITALL,&mask_r,EVENT_MODE);
+    if(mask_r);
     cout << "event flag find arena received";
     rt_event_signal(Envoi,0); //Stop envoi
-    Img image = Camera
+    Img image = camera.
     
     
 }
@@ -612,16 +614,17 @@ void Tasks::Calibration(void *arg) {
 void Tasks::ThComRobot()
 {
     int err;
+    unsigned long comRobotEventFlag;
     while  (1)
     {
-        //:comRobot()?comRobotEventFlag;     // A MODIFIER : Doit recuperer la valeur de l'event comRobot() et le stocker dans comRobotEventFlag
-        if (comRobotEventFlag == 1)            //1 <=> START
+        rt_event_wait(&event_comRobot,MASK_WAITALL,&comRobotEventFlag,EVENT_MODE)   //:comRobot()?comRobotEventFlag;
+        if (comRobotEventFlag == EVENT_COMROBOTSTART)            //1 <=> START
         {
             err = robot.Open();
             if (err != -1) 
             {
                 msgSend = new Message(MESSAGE_ANSWER_ACK);
-                //:comRobotStartEvent!START; // A MODIFIER : Doit signaler "START" dans l'évenement comRobotStartEvent
+                rt_event_signal(&event_comRobot,EVENT_COMROBOTISSTARTED);   //:comRobotStartEvent!START; 
             }
             else
             {
@@ -630,12 +633,12 @@ void Tasks::ThComRobot()
         }
         else
         {
-            //:comRobotStartEvent!STOP;  // A MODIFIER : Doit signaler "STOP" dans l'évenement comRobotStartEvent
-            if (comRobotEventFlag == 2)   //2<=>LOST 
+            rt_event_signal(&event_comRobotStartEvent,EVENT_INIT); //:comRobotStartEvent!STOP;  
+            if (comRobotEventFlag == EVENT_COMROBOTLOST)   //2<=>LOST 
             {
                 msgSend = new Message(COMMUNICATION_LOST);
             }
-            else if (comRobotEventFlag == 3) //3<=>STOP
+            else if (comRobotEventFlag == EVENT_COMROBOTSTOP) //3<=>STOP
             {
                 stopRobot = 1;
                 robot.Close();

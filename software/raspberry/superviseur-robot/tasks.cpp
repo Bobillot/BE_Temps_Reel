@@ -501,16 +501,17 @@ void Tasks::UpdateBatteryLevel()
 void Tasks::ThComRobot()
 {
     int err;
+    unsigned long comRobotEventFlag;
     while  (1)
     {
-        //:comRobot()?comRobotEventFlag;     // A MODIFIER : Doit recuperer la valeur de l'event comRobot() et le stocker dans comRobotEventFlag
-        if (comRobotEventFlag == 1)            //1 <=> START
+        rt_event_wait(&event_comRobot,MASK_WAITALL,&comRobotEventFlag,EVENT_MODE)   //:comRobot()?comRobotEventFlag;
+        if (comRobotEventFlag == EVENT_COMROBOTSTART)            //1 <=> START
         {
             err = robot.Open();
             if (err != -1) 
             {
                 msgSend = new Message(MESSAGE_ANSWER_ACK);
-                //:comRobotStartEvent!START; // A MODIFIER : Doit signaler "START" dans l'évenement comRobotStartEvent
+                rt_event_signal(&event_comRobot,EVENT_COMROBOTISSTARTED);   //:comRobotStartEvent!START; 
             }
             else
             {
@@ -519,7 +520,7 @@ void Tasks::ThComRobot()
         }
         else
         {
-            //:comRobotStartEvent!STOP;  // A MODIFIER : Doit signaler "STOP" dans l'évenement comRobotStartEvent
+            rt_event_signal(&event_comRobotStartEvent,EVENT_INIT); //:comRobotStartEvent!STOP;  
             if (comRobotEventFlag == 2)   //2<=>LOST 
             {
                 msgSend = new Message(COMMUNICATION_LOST);

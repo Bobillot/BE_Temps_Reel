@@ -511,10 +511,12 @@ void Tasks::UpdateBatteryLevel()
 
 void Tasks::Calibration(void *arg) {
     
-    rt_event_wait(find_Arena,0);
+    unsigned long mask_r ;
+    rt_event_wait(event_findArena,MASK_WAITALL,&mask_r,EVENT_MODE);
+    if(mask_r);
     cout << "event flag find arena received";
     rt_event_signal(Envoi,0); //Stop envoi
-    Img image = Camera
+    Img image = camera.
     
     
 }

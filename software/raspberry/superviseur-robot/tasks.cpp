@@ -37,9 +37,14 @@
 //Start communication
 #define EVENT_COMROBOTSTART 0x1
 #define EVENT_COMROBOTSTOP 0x2
+#define EVENT_COMROBOTLOST 0x4
 //internal gestion_robot_signals
-#define EVENT_COMROBOTISSTARTED 0x1 /*Stop = not started (0x0)*/
-#define EVENT_COMROBOTISLOST 0x2    /*Stop = not started (0x0)*/
+#define EVENT_COMROBOTISSTARTED 0x1    
+//arena validity
+#define EVENT_ARENAOK 0x1
+#define EVENT_ARENANOK 0x2
+//camera sending stops
+#define EVENT_ENVOIRESUME 0x1
 
 //Declaration of event MASK
 #define MASK_WAITALL 0xFFFF
@@ -87,14 +92,28 @@ void Tasks::Init() {
         exit(EXIT_FAILURE);
     }
     if (err = rt_event_create(&event_comRobotStartEvent,
-                    "startRobotEvents",
+                    "ComStatusRobotEvents",
                     EVENT_INIT,
                     EVENT_MODE)) {
         cerr << "Error event create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
     if (err = rt_event_create(&event_WD,
-                    "startRobotEvents",
+                    "startWDEvents",
+                    EVENT_INIT,
+                    EVENT_MODE)) {
+        cerr << "Error event create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    if (err = rt_event_create(&event_arenaValid,
+                    "arenaValidEvents",
+                    EVENT_INIT,
+                    EVENT_MODE)) {
+        cerr << "Error event create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    if (err = rt_event_create(&event_envoi,
+                    "cameraSendingEvents",
                     EVENT_INIT,
                     EVENT_MODE)) {
         cerr << "Error event create: " << strerror(-err) << endl << flush;
@@ -580,10 +599,12 @@ void Tasks::receiveFromMon()
 
 void Tasks::Calibration(void *arg) {
     
-    rt_event_wait(find_Arena,0);
+    unsigned long mask_r ;
+    rt_event_wait(event_findArena,MASK_WAITALL,&mask_r,EVENT_MODE);
+    if(mask_r);
     cout << "event flag find arena received";
     rt_event_signal(Envoi,0); //Stop envoi
-    Img image = Camera
+    Img image = camera.
     
     
 }
@@ -591,16 +612,17 @@ void Tasks::Calibration(void *arg) {
 void Tasks::ThComRobot()
 {
     int err;
+    unsigned long comRobotEventFlag;
     while  (1)
     {
-        //:comRobot()?comRobotEventFlag;     // A MODIFIER : Doit recuperer la valeur de l'event comRobot() et le stocker dans comRobotEventFlag
-        if (comRobotEventFlag == 1)            //1 <=> START
+        rt_event_wait(&event_comRobot,MASK_WAITALL,&comRobotEventFlag,EVENT_MODE)   //:comRobot()?comRobotEventFlag;
+        if (comRobotEventFlag == EVENT_COMROBOTSTART)            //1 <=> START
         {
             err = robot.Open();
             if (err != -1) 
             {
                 msgSend = new Message(MESSAGE_ANSWER_ACK);
-                //:comRobotStartEvent!START; // A MODIFIER : Doit signaler "START" dans l'évenement comRobotStartEvent
+                rt_event_signal(&event_comRobot,EVENT_COMROBOTISSTARTED);   //:comRobotStartEvent!START; 
             }
             else
             {
@@ -609,12 +631,12 @@ void Tasks::ThComRobot()
         }
         else
         {
-            //:comRobotStartEvent!STOP;  // A MODIFIER : Doit signaler "STOP" dans l'évenement comRobotStartEvent
-            if (comRobotEventFlag == 2)   //2<=>LOST 
+            rt_event_signal(&event_comRobotStartEvent,EVENT_INIT); //:comRobotStartEvent!STOP;  
+            if (comRobotEventFlag == EVENT_COMROBOTLOST)   //2<=>LOST 
             {
                 msgSend = new Message(COMMUNICATION_LOST);
             }
-            else if (comRobotEventFlag == 3) //3<=>STOP
+            else if (comRobotEventFlag == EVENT_COMROBOTSTOP) //3<=>STOP
             {
                 stopRobot = 1;
                 robot.Close();
@@ -624,3 +646,4 @@ void Tasks::ThComRobot()
     WriteInQueue(&q_messageToMon,msgSend);
     }
 }
+

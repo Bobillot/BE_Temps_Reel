@@ -62,19 +62,26 @@ private:
     /**********************************************************************/
     /* Events                                                             */
     /**********************************************************************/
+    //robot
     RT_EVENT event_comRobot;
     RT_EVENT event_startRobot;
     RT_EVENT event_comRobotStartEvent;
     RT_EVENT event_WD;
+    RT_EVENT event_findArena;
+    //camera
+    RT_EVENT event_arenaValid
+    RT_EVENT event_envoi
 
     /**********************************************************************/
     /* Shared data                                                        */
     /**********************************************************************/
     ComMonitor monitor;
     ComRobot robot;
+    Camera camera;
     int robotStarted = 0;
     int move = MESSAGE_ROBOT_STOP;
     int shr_stopRobot = 0;
+    int shr_calculPosition = 0;
     
     /**********************************************************************/
     /* Tasks                                                              */
@@ -86,6 +93,7 @@ private:
     RT_TASK th_startRobot;
     RT_TASK th_move;
     RT_TASK th_batLevelUpdate;
+    RT_TASK th_calibration;
     
     /**********************************************************************/
     /* Mutex                                                              */
@@ -145,6 +153,11 @@ private:
     /*perso*/
     void UpdateBatteryLevel();
     /* perso*/
+    
+    /**
+     * @brief Thread handling calibration requests
+     */
+    void Calibration(void *arg);
     
     /**********************************************************************/
     /* Queue services                                                     */

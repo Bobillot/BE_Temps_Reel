@@ -4,23 +4,28 @@ skinparam monochrome true
 
 start
 
-while( )
+while  ( )
     :comRobot()?comRobotEventFlag;
     if (comRobotEventFlag) then (START)
-    :err = robot.Open();
+        :err = robot.Open();
         if (err) then (robot_ok)
-        :msgSend = new Message(MESSAGE_ANSWER_ACK);
-        :comRobotStartEvent!START;
+            :msgSend = new Message(MESSAGE_ANSWER_ACK);
+            :comRobotStartEvent!START;
         else
             :msgSend = new Message(MESSAGE_ANSWER_NACK);
         endif
-    else (STOP)
+
+    else (OTHER)
         :comRobotStartEvent!STOP;
-        :stopRobot = 1;
-        :robot.Close();
-        :msgSend = new Message(MESSAGE_COM_CLOSED);
-        
-        'Check message type
+        if (comRobotEventFlag) then (LOST) 
+            :msg = new Message(COMMUNICATION_LOST);
+        else (STOP)
+            :stopRobot = 1;
+            :robot.Close();
+            :msgSend = new Message(MESSAGE_COM_CLOSED);
+
+            'Check message type
+        endif
     endif
     :msgToMon!msgSend;
 endwhile

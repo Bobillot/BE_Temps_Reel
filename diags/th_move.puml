@@ -66,9 +66,7 @@ if (compteurEchec > 3) then (true)
     '    si on sait qu'on coupe la com à cause du temps de traitement 
     '    de th_com_robot
     'endnote
-    :openComRobot!STOP;
-    :msg = new Message(COMMUNICATION_LOST)
-    msgToMon!msg;
+    :comRobotStartEvent!LOST;
 else (false)
 endif
 else (0)

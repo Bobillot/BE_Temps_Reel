@@ -16,6 +16,7 @@ while( )
         endif
     else (CLOSE)
         :comRobotStartEvent!STOP;
+        :robotStop = STOP;
         :robot.Close();
         :msgSend = new Message(MESSAGE_COM_CLOSED);
         

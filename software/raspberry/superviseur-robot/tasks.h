@@ -76,6 +76,7 @@ private:
     /**********************************************************************/
     ComMonitor monitor;
     ComRobot robot;
+    Camera camera;
     int robotStarted = 0;
     int move = MESSAGE_ROBOT_STOP;
     int shr_stopRobot = 0;
@@ -91,6 +92,7 @@ private:
     RT_TASK th_startRobot;
     RT_TASK th_move;
     RT_TASK th_batLevelUpdate;
+    RT_TASK th_calibration;
     
     /**********************************************************************/
     /* Mutex                                                              */
@@ -150,6 +152,11 @@ private:
     /*perso*/
     void UpdateBatteryLevel();
     /* perso*/
+    
+    /**
+     * @brief Thread handling calibration requests
+     */
+    void Calibration(void *arg);
     
     /**********************************************************************/
     /* Queue services                                                     */

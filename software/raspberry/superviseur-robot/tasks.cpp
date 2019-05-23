@@ -194,6 +194,11 @@ void Tasks::Init() {
         cerr << "Error task create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
+    if (err = rt_task_create(&th_calibration, "th_calibration", 0, PRIORITY_TBAT, 0)) {
+        cerr << "Error task create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    
     cout << "Tasks created successfully" << endl << flush;
 
     /**************************************************************************************/
@@ -242,7 +247,10 @@ void Tasks::Run() {
     cerr << "Error task start: " << strerror(-err) << endl << flush;
     exit(EXIT_FAILURE);
     }
-
+    if (err = rt_task_start(&th_calibration, (void(*)(void*)) & Tasks::Calibration, this)) {
+    cerr << "Error task start: " << strerror(-err) << endl << flush;
+    exit(EXIT_FAILURE);
+    }
     cout << "Tasks launched" << endl << flush;
 }
 
@@ -261,6 +269,7 @@ void Tasks::Join() {
     rt_sem_broadcast(&sem_barrier);
     pause();
 }
+
 
 /**
  * @brief Thread handling server communication with the monitor.
@@ -514,9 +523,129 @@ void Tasks::UpdateBatteryLevel()
             WriteInQueue(&q_messageToMon,level);
         }
         cout << endl << flush;
-    
-        
-        
-       
      }
 }
+
+<<<<<<< HEAD
+void Tasks::receiveFromMon()
+{
+    Message * msgRcv ; 
+    string move ; 
+    boolean stopRobot ;
+    boolean stopCamera ; 
+    
+    rt_sem_p(&sem_serverOk, TM_INFINITE);
+    
+    while(1) 
+    {
+        msgRcv = monitor.Read() ; 
+    
+        switch (msgRcv->messageID) 
+        {
+            case (MESSAGE_MONITOR_LOST): 
+                return; 
+            case (MESSAGE_ROBOT_COM_OPEN): 
+                //comRobot!START
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_COM_CLOSE): 
+                //comRobot!STOP
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_START_WITH_WD):
+                //startRobot!WD
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_START_WITHOUT_WD): 
+                //startRobot!NOWD
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_STOP): 
+                stopRobot = true ; 
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_CAM_OPEN):
+                //startCamera!
+                //rt_event_signal()
+                break;
+            case (MESSAGE_CAM_CLOSE): 
+                stopCamera = true ; 
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_CAM_ASK_ARENA): 
+                //findArena!
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_CAM_ARENA_CONFIRM):
+                //arenaValid!OK
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_CAM_ARENA_INFIRM): 
+                //arenaValid!KO
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_CAM_POSITION_COMPUTE_START):
+                //calculPosition!START
+                //rt_event_signal()
+                break;     
+            case (MESSAGE_CAM_POSITION_COMPUTE_STOP): 
+                //calculPosition!STOP
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_GO_FORWARD || MESSAGE_ROBOT_GO_LEFT || MESSAGE_ROBOT_GO_RIGHT || MESSAGE_ROBOT_STOP):
+                move = msgRcv->GetId() ; 
+                break; 
+        }
+    }
+}
+=======
+
+
+void Tasks::Calibration(void *arg) {
+    
+    rt_event_wait(find_Arena,0);
+    cout << "event flag find arena received";
+    rt_event_signal(Envoi,0); //Stop envoi
+    Img image = Camera
+    
+    
+}
+
+void Tasks::ThComRobot()
+{
+    int err;
+    while  (1)
+    {
+        //:comRobot()?comRobotEventFlag;     // A MODIFIER : Doit recuperer la valeur de l'event comRobot() et le stocker dans comRobotEventFlag
+        if (comRobotEventFlag == 1)            //1 <=> START
+        {
+            err = robot.Open();
+            if (err != -1) 
+            {
+                msgSend = new Message(MESSAGE_ANSWER_ACK);
+                //:comRobotStartEvent!START; // A MODIFIER : Doit signaler "START" dans l'évenement comRobotStartEvent
+            }
+            else
+            {
+                msgSend = new Message(MESSAGE_ANSWER_NACK);
+            }    
+        }
+        else
+        {
+            //:comRobotStartEvent!STOP;  // A MODIFIER : Doit signaler "STOP" dans l'évenement comRobotStartEvent
+            if (comRobotEventFlag == 2)   //2<=>LOST 
+            {
+                msgSend = new Message(COMMUNICATION_LOST);
+            }
+            else if (comRobotEventFlag == 3) //3<=>STOP
+            {
+                stopRobot = 1;
+                robot.Close();
+                msgSend = new Message(MESSAGE_COM_CLOSED);
+            }
+        }
+    WriteInQueue(&q_messageToMon,msgSend);
+    }
+}
+
+>>>>>>> e3cfe3ae789d538708ba67717a39c3635bc91ac2

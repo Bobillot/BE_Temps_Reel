@@ -15,29 +15,29 @@ start
 while ( )
     :findArena?;
 
-    :stopEnvoi!;
-    note : sem repriseEnvoi
+    :Envoi!STOP;
+    note : eventflag 
 
-    :img = Camera::Grab();
+    :img = Camera.Grab();
     note : assumes function does the mutex part
 
-    :arena = Img::SearchArena(img);
+    :arenaLoc = Img::SearchArena(img);
 
     if (arena) then (null)
         :msg = new Message(NO_ACK);
-        :messageToMon!msg;
+        :msgToMon!msg;
     else
         :img = Img::DrawArena(arena);
-        :messageToMon!img;
-        :arenaOK/NOK?val;
-        if(val) then (true)
-            :arenaShared = arena;
-        else (false)
-            :arenaShared = null;
+        :msgToMon!img;
+        :arenaValid()?val;
+        if(val) then (OK)
+            :arena = arenaLoc;
+        else (KO)
+            :arena = null;
         endif
     endif
 
-    :repriseEnvoi!;
+    :Envoi!RESUME;
 
 
 endwhile

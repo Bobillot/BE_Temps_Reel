@@ -8,8 +8,9 @@ start
 
 while( )
 
-:startWD?;
+:eventWD?START;
 note right
+    Blocage tant que eventWD!=START
     Synchro sur sémaphore 
     (try pour ne pas décrémenter, décrementer dans th_move pour stopper)
 end note

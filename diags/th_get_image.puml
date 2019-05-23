@@ -2,55 +2,84 @@
 
 skinparam monochrome true
 
-floating note left  
-    Proposition modif modelisation
+floating note left
+Proposition modif modelisation
 
-    arena shared var 
+arena shared var
 
-    Fermeture de la camera dans ce thread ==> attente de la fin des calculs lors du stop
+Fermeture de la camera dans ce thread ==> attente de la fin des calculs lors du stop
+
+
+Variables :
+sendImages : bool
 end note
 
 start
 
 while ( )
 
-    :démarrerCamera?;
-    note right: sync sémaphore
-    
-    :startEnvoi?;
-    note right 
-        sync sur sémaphore 
-        pe modifier pour que th calib récupère startCam
-        pour factor
-    end note
+    :startCamera;
+    note : sync sémaphore
+    :reset(signalCamera);
 
-    :computePosLoc = computePosShared;
+    :err = camera.Open();
+    if(err) then (camera_ok)
 
-    
-    :img = Camera::Grab();
+        :msg = new Message(MESSAGE_ANSWER_ACK);
+        :msgToMon!msg;
 
-    if (computePosLoc) then (true)
-        'partition computePos {
-            :pos = Img::SearchRobot(img,arena);
-            if (pos) then 
-                :msg = MessagePosition(pos);
-            else (null)
-                :pos = (-1;-1)
-                :msg = MessagePosition(pos);
+        :sendImages = true;
+
+        while (sendImages) is (true)
+            if(stopCamera) then (false)
+                :Envoi?RESUME;
+
+                :timeStart = now();
+
+                :computePosLoc = computePosShared;
+
+                :img = Camera.Grab();
+                note : take mutex until end to execute in CS for camera
+
+                if (computePosLoc) then (true)
+                        :pos = Img::SearchRobot(img,arena);
+                        if (pos) then
+                            :msg = MessagePosition(pos);
+                        else (null)
+                            :pos = (-1;-1)
+                            :msg = MessagePosition(pos);
+                        endif
+                        :msgToMon!msg;
+                else (false)
+
+                endif
+
+                :msgToMon!img;
+
+                :wait (100ms - (now() - timeStart);
+                note
+                compute elapsed time since start
+                if precision needed
+                end note
+                'event stopCamera reçu
+            else (true)
+                : stopCamera = false;
+                :err = camera.Close();
+                if(err) then (camera_closed)
+                    :sendImages = false;
+                    :msg = new Message(MESSAGE_ANSWER_ACK);
+                else
+                    :msg = new Message(MESSAGE_ANSWER_NACK);
+                endif
+                :mstToMon!msg;
             endif
-            :msgToMon!msg;
-        '}
-    else (false)
+        endwhile (false)
 
+    else (!camera_ok)
+
+        :msg = new Message(MESSAGE_ANSWER_ACK);
+        :msgToMon!msg;
     endif
-
-    :msgToMon!img;   
-
-    :wait 100ms; 
-    note
-        compute elapsed time since start 
-        if precision needed
-    end note
 endwhile
 
 stop

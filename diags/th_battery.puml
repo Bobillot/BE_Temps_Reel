@@ -6,7 +6,7 @@ title th_battery \n
 start
 
 while ()
-  :comDemarree?;
+  :comRobotStartEvent?(START);
   :wait 500ms;
   :level = (MessageBattery*)robot.Write(ComRobot::GetBattery());
   :msgToMon!level;

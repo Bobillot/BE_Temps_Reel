@@ -454,3 +454,75 @@ void Tasks::UpdateBatteryLevel()
        
      }
 }
+
+void Tasks::receiveFromMon()
+{
+    Message * msgRcv ; 
+    string move ; 
+    boolean stopRobot ;
+    boolean stopCamera ; 
+    
+    rt_sem_p(&sem_serverOk, TM_INFINITE);
+    
+    while(1) 
+    {
+        msgRcv = monitor.Read() ; 
+    
+        switch (msgRcv->messageID) 
+        {
+            case (MESSAGE_MONITOR_LOST): 
+                return; 
+            case (MESSAGE_ROBOT_COM_OPEN): 
+                //comRobot!START
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_COM_CLOSE): 
+                //comRobot!STOP
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_START_WITH_WD):
+                //startRobot!WD
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_START_WITHOUT_WD): 
+                //startRobot!NOWD
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_STOP): 
+                stopRobot = true ; 
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_CAM_OPEN):
+                //startCamera!
+                //rt_event_signal()
+                break;
+            case (MESSAGE_CAM_CLOSE): 
+                stopCamera = true ; 
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_CAM_ASK_ARENA): 
+                //findArena!
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_CAM_ARENA_CONFIRM):
+                //arenaValid!OK
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_CAM_ARENA_INFIRM): 
+                //arenaValid!KO
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_CAM_POSITION_COMPUTE_START):
+                //calculPosition!START
+                //rt_event_signal()
+                break;     
+            case (MESSAGE_CAM_POSITION_COMPUTE_STOP): 
+                //calculPosition!STOP
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_GO_FORWARD || MESSAGE_ROBOT_GO_LEFT || MESSAGE_ROBOT_GO_RIGHT || MESSAGE_ROBOT_STOP):
+                move = msgRcv->GetId() ; 
+                break; 
+        }
+    }
+}

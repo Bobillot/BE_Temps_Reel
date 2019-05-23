@@ -60,6 +60,14 @@ public:
     
 private:
     /**********************************************************************/
+    /* Events                                                             */
+    /**********************************************************************/
+    RT_EVENT event_comRobot;
+    RT_EVENT event_startRobot;
+    RT_EVENT event_comRobotStartEvent;
+    RT_EVENT event_WD;
+
+    /**********************************************************************/
     /* Shared data                                                        */
     /**********************************************************************/
     ComMonitor monitor;
@@ -67,6 +75,7 @@ private:
     Camera camera;
     int robotStarted = 0;
     int move = MESSAGE_ROBOT_STOP;
+    int shr_stopRobot = 0;
     
     /**********************************************************************/
     /* Tasks                                                              */

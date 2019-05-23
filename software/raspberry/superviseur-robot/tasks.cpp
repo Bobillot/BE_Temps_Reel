@@ -448,9 +448,42 @@ void Tasks::UpdateBatteryLevel()
             WriteInQueue(&q_messageToMon,level);
         }
         cout << endl << flush;
-    
-        
-        
-       
      }
+}
+
+void Tasks::ThComRobot()
+{
+    int err;
+    while  (1)
+    {
+        //:comRobot()?comRobotEventFlag;     // A MODIFIER : Doit recuperer la valeur de l'event comRobot() et le stocker dans comRobotEventFlag
+        if (comRobotEventFlag == 1)            //1 <=> START
+        {
+            err = robot.Open();
+            if (err != -1) 
+            {
+                msgSend = new Message(MESSAGE_ANSWER_ACK);
+                //:comRobotStartEvent!START; // A MODIFIER : Doit signaler "START" dans l'évenement comRobotStartEvent
+            }
+            else
+            {
+                msgSend = new Message(MESSAGE_ANSWER_NACK);
+            }    
+        }
+        else
+        {
+            //:comRobotStartEvent!STOP;  // A MODIFIER : Doit signaler "STOP" dans l'évenement comRobotStartEvent
+            if (comRobotEventFlag == 2)   //2<=>LOST 
+            {
+                msgSend = new Message(COMMUNICATION_LOST);
+            }
+            else if (comRobotEventFlag == 3) //3<=>STOP
+            {
+                stopRobot = 1;
+                robot.Close();
+                msgSend = new Message(MESSAGE_COM_CLOSED);
+            }
+        }
+    WriteInQueue(&q_messageToMon,msgSend);
+    }
 }

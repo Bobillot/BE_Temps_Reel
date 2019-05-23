@@ -28,6 +28,13 @@
 #define PRIORITY_TCAMERA 21
 #define PRIORITY_TBAT 19
 
+//Déclaration des events flags
+#define EVENT_INIT        0x0           /* No flags present at init */
+#define EVENT_MODE        EV_PRIO       /* Tasks will wait by priority order */
+#define EVENT_STARTNOWD     0x1
+#define EVENT_STARTWD     0x2
+#define EVENT_COMROBOTSTART     0x1
+#define EVENT_COMROBOTSTOP     0x2
 /*
  * Some remarks:
  * 1- This program is mostly a template. It shows you how to create tasks, semaphore
@@ -54,6 +61,24 @@
 void Tasks::Init() {
     int status;
     int err;
+    **************************************************************************************/
+    /* 	Event creation                                                                   */
+    /**************************************************************************************/
+    if (err = rt_event_create(&event_comRobot,
+                    "comRobotStartEvents",
+                    EVENT_INIT,
+                    EVENT_MODE)) {
+        cerr << "Error event create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    if (err = rt_event_create(&event_startRobot,
+                    "startRobotEvents",
+                    EVENT_INIT,
+                    EVENT_MODE)) {
+        cerr << "Error event create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    
 
     /**************************************************************************************/
     /* 	Mutex creation                                                                    */

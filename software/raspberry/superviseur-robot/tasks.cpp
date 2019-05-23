@@ -38,8 +38,13 @@
 #define EVENT_COMROBOTSTART 0x1
 #define EVENT_COMROBOTSTOP 0x2
 //internal gestion_robot_signals
-#define EVENT_COMROBOTISSTARTED 0x1 /*Stop = not started (0x0)*/
-#define EVENT_COMROBOTISLOST 0x2    /*Stop = not started (0x0)*/
+#define EVENT_COMROBOTISSTARTED 0x1 
+#define EVENT_COMROBOTISLOST 0x2    
+//arena validity
+#define EVENT_ARENAOK 0x1
+#define EVENT_ARENANOK 0x2
+//camera sending stops
+#define EVENT_ENVOIRESUME 0x1
 
 //Declaration of event MASK
 #define MASK_WAITALL 0xFFFF
@@ -87,14 +92,28 @@ void Tasks::Init() {
         exit(EXIT_FAILURE);
     }
     if (err = rt_event_create(&event_comRobotStartEvent,
-                    "startRobotEvents",
+                    "ComStatusRobotEvents",
                     EVENT_INIT,
                     EVENT_MODE)) {
         cerr << "Error event create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
     if (err = rt_event_create(&event_WD,
-                    "startRobotEvents",
+                    "startWDEvents",
+                    EVENT_INIT,
+                    EVENT_MODE)) {
+        cerr << "Error event create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    if (err = rt_event_create(&event_arenaValid,
+                    "arenaValidEvents",
+                    EVENT_INIT,
+                    EVENT_MODE)) {
+        cerr << "Error event create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    if (err = rt_event_create(&event_envoi,
+                    "cameraSendingEvents",
                     EVENT_INIT,
                     EVENT_MODE)) {
         cerr << "Error event create: " << strerror(-err) << endl << flush;
@@ -507,6 +526,77 @@ void Tasks::UpdateBatteryLevel()
      }
 }
 
+void Tasks::receiveFromMon()
+{
+    Message * msgRcv ; 
+    string move ; 
+    boolean stopRobot ;
+    boolean stopCamera ; 
+    
+    rt_sem_p(&sem_serverOk, TM_INFINITE);
+    
+    while(1) 
+    {
+        msgRcv = monitor.Read() ; 
+    
+        switch (msgRcv->messageID) 
+        {
+            case (MESSAGE_MONITOR_LOST): 
+                return; 
+            case (MESSAGE_ROBOT_COM_OPEN): 
+                //comRobot!START
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_COM_CLOSE): 
+                //comRobot!STOP
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_START_WITH_WD):
+                //startRobot!WD
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_START_WITHOUT_WD): 
+                //startRobot!NOWD
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_STOP): 
+                stopRobot = true ; 
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_CAM_OPEN):
+                //startCamera!
+                //rt_event_signal()
+                break;
+            case (MESSAGE_CAM_CLOSE): 
+                stopCamera = true ; 
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_CAM_ASK_ARENA): 
+                //findArena!
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_CAM_ARENA_CONFIRM):
+                //arenaValid!OK
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_CAM_ARENA_INFIRM): 
+                //arenaValid!KO
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_CAM_POSITION_COMPUTE_START):
+                //calculPosition!START
+                //rt_event_signal()
+                break;     
+            case (MESSAGE_CAM_POSITION_COMPUTE_STOP): 
+                //calculPosition!STOP
+                //rt_event_signal()
+                break; 
+            case (MESSAGE_ROBOT_GO_FORWARD || MESSAGE_ROBOT_GO_LEFT || MESSAGE_ROBOT_GO_RIGHT || MESSAGE_ROBOT_STOP):
+                move = msgRcv->GetId() ; 
+                break; 
+        }
+    }
+}
 
 
 void Tasks::Calibration(void *arg) {
@@ -558,3 +648,4 @@ void Tasks::ThComRobot()
     }
 }
 
+>>>>>>> e3cfe3ae789d538708ba67717a39c3635bc91ac2

@@ -29,12 +29,20 @@
 #define PRIORITY_TBAT 19
 
 //Déclaration des events flags
-#define EVENT_INIT        0x0           /* No flags present at init */
-#define EVENT_MODE        EV_PRIO       /* Tasks will wait by priority order */
-#define EVENT_STARTNOWD     0x1
-#define EVENT_STARTWD     0x2
-#define EVENT_COMROBOTSTART     0x1
-#define EVENT_COMROBOTSTOP     0x2
+#define EVENT_INIT 0x0     /* No flags present at init */
+#define EVENT_MODE EV_PRIO /* Tasks will wait by priority order */
+//start robot
+#define EVENT_STARTNOWD 0x1
+#define EVENT_STARTWD 0x2
+//Start communication
+#define EVENT_COMROBOTSTART 0x1
+#define EVENT_COMROBOTSTOP 0x2
+//internal gestion_robot_signals
+#define EVENT_COMROBOTISSTARTED 0x1 /*Stop = not started (0x0)*/
+#define EVENT_COMROBOTISLOST 0x2    /*Stop = not started (0x0)*/
+
+//Declaration of event MASK
+#define MASK_WAITALL 0xFFFF
 /*
  * Some remarks:
  * 1- This program is mostly a template. It shows you how to create tasks, semaphore
@@ -72,6 +80,20 @@ void Tasks::Init() {
         exit(EXIT_FAILURE);
     }
     if (err = rt_event_create(&event_startRobot,
+                    "startRobotEvents",
+                    EVENT_INIT,
+                    EVENT_MODE)) {
+        cerr << "Error event create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    if (err = rt_event_create(&event_comRobotStartEvent,
+                    "startRobotEvents",
+                    EVENT_INIT,
+                    EVENT_MODE)) {
+        cerr << "Error event create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    if (err = rt_event_create(&event_WD,
                     "startRobotEvents",
                     EVENT_INIT,
                     EVENT_MODE)) {

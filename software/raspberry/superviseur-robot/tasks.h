@@ -64,6 +64,8 @@ private:
     /**********************************************************************/
     RT_EVENT event_comRobot;
     RT_EVENT event_startRobot;
+    RT_EVENT event_comRobotStartEvent;
+    RT_EVENT event_WD;
 
     /**********************************************************************/
     /* Shared data                                                        */

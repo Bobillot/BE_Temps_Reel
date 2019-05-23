@@ -128,6 +128,11 @@ void Tasks::Init() {
         cerr << "Error task create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
+    if (err = rt_task_create(&th_calibration, "th_calibration", 0, PRIORITY_TBAT, 0)) {
+        cerr << "Error task create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    
     cout << "Tasks created successfully" << endl << flush;
 
     /**************************************************************************************/
@@ -176,7 +181,10 @@ void Tasks::Run() {
     cerr << "Error task start: " << strerror(-err) << endl << flush;
     exit(EXIT_FAILURE);
     }
-
+    if (err = rt_task_start(&th_calibration, (void(*)(void*)) & Tasks::Calibration, this)) {
+    cerr << "Error task start: " << strerror(-err) << endl << flush;
+    exit(EXIT_FAILURE);
+    }
     cout << "Tasks launched" << endl << flush;
 }
 
@@ -195,6 +203,7 @@ void Tasks::Join() {
     rt_sem_broadcast(&sem_barrier);
     pause();
 }
+
 
 /**
  * @brief Thread handling server communication with the monitor.
@@ -453,4 +462,15 @@ void Tasks::UpdateBatteryLevel()
         
        
      }
+}
+
+
+void Tasks::Calibration(void *arg) {
+    
+    rt_event_wait(find_Arena,0);
+    cout << "event flag find arena received";
+    rt_event_signal(Envoi,0); //Stop envoi
+    Img image = Camera
+    
+    
 }

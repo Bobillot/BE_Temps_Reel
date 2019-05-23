@@ -60,14 +60,13 @@ while ()
 note : shrd var, reset après conso event
 
 if (compteurEchec > 3) then (true)
-    :comRobotStartEvent!STOP;
-    note 
-        evite de rerentrer dans le début du thread 
-        si on sait qu'on coupe la com à cause du temps de traitement 
-        de th_com_robot
-    endnote
-    :event = CLOSE
-    openComRobot!event;
+    ':comRobotStartEvent!STOP;
+    'note 
+    '    evite de rerentrer dans le début du thread 
+    '    si on sait qu'on coupe la com à cause du temps de traitement 
+    '    de th_com_robot
+    'endnote
+    :openComRobot!STOP;
     :msg = new Message(COMMUNICATION_LOST)
     msgToMon!msg;
 else (false)

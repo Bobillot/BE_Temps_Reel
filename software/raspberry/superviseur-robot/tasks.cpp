@@ -38,8 +38,13 @@
 #define EVENT_COMROBOTSTART 0x1
 #define EVENT_COMROBOTSTOP 0x2
 //internal gestion_robot_signals
-#define EVENT_COMROBOTISSTARTED 0x1 /*Stop = not started (0x0)*/
-#define EVENT_COMROBOTISLOST 0x2    /*Stop = not started (0x0)*/
+#define EVENT_COMROBOTISSTARTED 0x1 
+#define EVENT_COMROBOTISLOST 0x2    
+//arena validity
+#define EVENT_ARENAOK 0x1
+#define EVENT_ARENANOK 0x2
+//camera sending stops
+#define EVENT_ENVOIRESUME 0x1
 
 //Declaration of event MASK
 #define MASK_WAITALL 0xFFFF
@@ -87,14 +92,28 @@ void Tasks::Init() {
         exit(EXIT_FAILURE);
     }
     if (err = rt_event_create(&event_comRobotStartEvent,
-                    "startRobotEvents",
+                    "ComStatusRobotEvents",
                     EVENT_INIT,
                     EVENT_MODE)) {
         cerr << "Error event create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
     if (err = rt_event_create(&event_WD,
-                    "startRobotEvents",
+                    "startWDEvents",
+                    EVENT_INIT,
+                    EVENT_MODE)) {
+        cerr << "Error event create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    if (err = rt_event_create(&event_arenaValid,
+                    "arenaValidEvents",
+                    EVENT_INIT,
+                    EVENT_MODE)) {
+        cerr << "Error event create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    if (err = rt_event_create(&event_envoi,
+                    "cameraSendingEvents",
                     EVENT_INIT,
                     EVENT_MODE)) {
         cerr << "Error event create: " << strerror(-err) << endl << flush;

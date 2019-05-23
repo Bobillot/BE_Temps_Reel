@@ -62,10 +62,14 @@ private:
     /**********************************************************************/
     /* Events                                                             */
     /**********************************************************************/
+    //robot
     RT_EVENT event_comRobot;
     RT_EVENT event_startRobot;
     RT_EVENT event_comRobotStartEvent;
     RT_EVENT event_WD;
+    //camera
+    RT_EVENT event_arenaValid
+    RT_EVENT event_envoi
 
     /**********************************************************************/
     /* Shared data                                                        */
@@ -75,6 +79,7 @@ private:
     int robotStarted = 0;
     int move = MESSAGE_ROBOT_STOP;
     int shr_stopRobot = 0;
+    int shr_calculPosition = 0;
     
     /**********************************************************************/
     /* Tasks                                                              */

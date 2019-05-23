@@ -22,33 +22,33 @@ while ()
 
         if(msgRcv.compareID(MESSAGE_ROBOT_COM_OPEN)) then (true)
 
-            :openComRobot! ;
+            :comRobot!START ;
 
         else (false)
 
             if(msgRcv.compareID(MESSAGE_ROBOT_START_WITH_WD)) then (true)
-                :startRobotWD! ;
+                :startRobot!WD ;
             else (false)
                 if(msgRcv.compareID(MESSAGE_ROBOT_START WITHOUT_WD)) then (true)
-                    :startRobot!;
+                    :startRobot!NOWD;
                 else (false)
                     if(msgRcv.compareID(MESSAGE_ROBOT_CAM_OPEN)) then (true)
-                        :ouvrirCamera! ;
+                        :signalCamera!OUVRIR ;
                     else  (false)
                         if(msgRcv.compareID(MESSAGE_ROBOT_CAM_ASK_ARENA)) then (true)
                             :findArena! ;
                         else (false)
                             if(msgRcv.compareID(MESSAGE_ROBOT_CAM_ARENA_CONFIRM)) then (true)
-                                :ArenaOK! ;
+                                :arenaValid!OK ;
                             else (false)
                                 if(msgRcv.compareID(MESSAGE_ROBOT_CAM_ARENA_INFIRM)) then (true)
-                                    :ArenaKO! ;
+                                    :arenaValid!KO ;
                                 else (false)
                                     if(msgRcv.compareID(MESSAGE_ROBOT_CAM_POSITION_COMPUTE_START)) then (true)
-                                      :calculerPosition !;
+                                      :calculPosition!START;
                                     else (false)
                                         if(msgRcv.compareID(MESSAGE_ROBOT_CAM_POSITION_COMPUTE_STOP)) then (true)
-                                            :stopCalculPosition! ;
+                                            :calculPosition!STOP ;
                                         else (false)
                                             if(msgRcv.compareID(MESSAGE_ROBOT_GO_FORWARD
                                             ||msgRcv.compareID(MESSAGE_ROBOT_GO_BACKWARD
@@ -80,4 +80,3 @@ stop
 
 
 @enduml
-                                                        

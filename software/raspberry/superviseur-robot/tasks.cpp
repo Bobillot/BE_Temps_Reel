@@ -634,11 +634,11 @@ void Tasks::ThComRobot()
         else
         {
             rt_event_signal(&event_comRobotStartEvent,EVENT_INIT); //:comRobotStartEvent!STOP;  
-            if (comRobotEventFlag == 2)   //2<=>LOST 
+            if (comRobotEventFlag == EVENT_COMROBOTLOST)   //2<=>LOST 
             {
                 msgSend = new Message(COMMUNICATION_LOST);
             }
-            else if (comRobotEventFlag == 3) //3<=>STOP
+            else if (comRobotEventFlag == EVENT_COMROBOTSTOP) //3<=>STOP
             {
                 stopRobot = 1;
                 robot.Close();

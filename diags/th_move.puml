@@ -21,11 +21,11 @@ while ()
     eventFlags : sans WD, avec WD
     endnote
 
-    if (eventFlags) then (STARTWD)
+    if (eventFlags) then (WD)
         :eventWD!START;
     note : passe la val de eventWD à START
         :ret = ComRobot::Write(StartWithWD());
-    else (START)
+    else (NOWD)
     :ret = ComRobot::Write(StartWithoutWD());
     endif
     
@@ -37,7 +37,7 @@ while ()
 
     :reset(EventFlags);
 
-    while (compteurEchec < 3 && eventStop == false) is (true)
+    while (compteurEchec < 3 && stopRobot == 0) is (true)
         :wait 100ms;
         if (move==STOP) then (yes)
             :err = robot.Write(Stop());
@@ -56,7 +56,7 @@ while ()
     endwhile (false)
     :eventWD!STOP;
     note : passe la val de eventWD à STOP
-:eventStop == false;
+:stopRobot = 0;
 note : shrd var, reset après conso event
 
 if (compteurEchec > 3) then (true)

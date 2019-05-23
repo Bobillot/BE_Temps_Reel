@@ -37,9 +37,9 @@
 //Start communication
 #define EVENT_COMROBOTSTART 0x1
 #define EVENT_COMROBOTSTOP 0x2
+#define EVENT_COMROBOTLOST 0x4
 //internal gestion_robot_signals
-#define EVENT_COMROBOTISSTARTED 0x1 
-#define EVENT_COMROBOTISLOST 0x2    
+#define EVENT_COMROBOTISSTARTED 0x1    
 //arena validity
 #define EVENT_ARENAOK 0x1
 #define EVENT_ARENANOK 0x2
@@ -648,4 +648,3 @@ void Tasks::ThComRobot()
     }
 }
 
->>>>>>> e3cfe3ae789d538708ba67717a39c3635bc91ac2

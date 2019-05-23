@@ -77,14 +77,14 @@ while ( )
         endif
         :mstToMon!msg;
     endif
-    endwhile
+    endwhile (false)
 
     else (!camera_ok)
 
     :msg = new Message(MESSAGE_ANSWER_ACK);
     :msgToMon!msg;
     endif
-endwhile
+endwhile 
 
 stop
 

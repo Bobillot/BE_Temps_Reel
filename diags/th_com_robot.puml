@@ -1,17 +1,11 @@
 @startuml th_com_robot
 
 skinparam monochrome true
-floating note : exemple sync exemple : https://stackoverflow.com/questions/2850091/wait-on-multiple-condition-variables-on-linux-without-unnecessary-sleeps
+
 start
 
 while( )
     :openComRobot?comRobotEventFlag;
-    note right
-        Synchronisation sur variable condition + event flag 
-        Flags de la forme 
-        * #define OPEN 1 (<=> 01)
-        * #define CLOSE 2 (<=> 10)
-    end note
     if (comRobotEventFlag) then (OPEN)
     :err = robot.Open();
         if (err) then (robot_ok)
@@ -21,9 +15,10 @@ while( )
             :msgSend = new Message(MESSAGE_ANSWER_NACK);
         endif
     else (CLOSE)
+        :comRobotStartEvent!STOP;
         :robot.Close();
         :msgSend = new Message(MESSAGE_COM_CLOSED);
-        :comRobotStartEvent!STOP;
+        
         'Check message type
     endif
     :msgToMon!msgSend;

@@ -29,10 +29,10 @@ while ( )
     else
         :img = Img::DrawArena(arena);
         :msgToMon!img;
-        :ArenaOK/KO?val;
-        if(val) then (true)
+        :arenaValid()?val;
+        if(val) then (OK)
             :arenaShared = arena;
-        else (false)
+        else (KO)
             :arenaShared = null;
         endif
     endif

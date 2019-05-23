@@ -5,8 +5,8 @@ skinparam monochrome true
 start
 
 while( )
-    :openComRobot?comRobotEventFlag;
-    if (comRobotEventFlag) then (OPEN)
+    :comRobot()?comRobotEventFlag;
+    if (comRobotEventFlag) then (START)
     :err = robot.Open();
         if (err) then (robot_ok)
         :msgSend = new Message(MESSAGE_ANSWER_ACK);
@@ -14,9 +14,9 @@ while( )
         else
             :msgSend = new Message(MESSAGE_ANSWER_NACK);
         endif
-    else (CLOSE)
+    else (STOP)
         :comRobotStartEvent!STOP;
-        :robotStop = STOP;
+        :stopRobot = 1;
         :robot.Close();
         :msgSend = new Message(MESSAGE_COM_CLOSED);
         

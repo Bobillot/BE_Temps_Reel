@@ -28,6 +28,21 @@
 #define PRIORITY_TCAMERA 21
 #define PRIORITY_TBAT 19
 
+//Déclaration des events flags
+#define EVENT_INIT 0x0     /* No flags present at init */
+#define EVENT_MODE EV_PRIO /* Tasks will wait by priority order */
+//start robot
+#define EVENT_STARTNOWD 0x1
+#define EVENT_STARTWD 0x2
+//Start communication
+#define EVENT_COMROBOTSTART 0x1
+#define EVENT_COMROBOTSTOP 0x2
+//internal gestion_robot_signals
+#define EVENT_COMROBOTISSTARTED 0x1 /*Stop = not started (0x0)*/
+#define EVENT_COMROBOTISLOST 0x2    /*Stop = not started (0x0)*/
+
+//Declaration of event MASK
+#define MASK_WAITALL 0xFFFF
 /*
  * Some remarks:
  * 1- This program is mostly a template. It shows you how to create tasks, semaphore
@@ -54,6 +69,38 @@
 void Tasks::Init() {
     int status;
     int err;
+    **************************************************************************************/
+    /* 	Event creation                                                                   */
+    /**************************************************************************************/
+    if (err = rt_event_create(&event_comRobot,
+                    "comRobotStartEvents",
+                    EVENT_INIT,
+                    EVENT_MODE)) {
+        cerr << "Error event create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    if (err = rt_event_create(&event_startRobot,
+                    "startRobotEvents",
+                    EVENT_INIT,
+                    EVENT_MODE)) {
+        cerr << "Error event create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    if (err = rt_event_create(&event_comRobotStartEvent,
+                    "startRobotEvents",
+                    EVENT_INIT,
+                    EVENT_MODE)) {
+        cerr << "Error event create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    if (err = rt_event_create(&event_WD,
+                    "startRobotEvents",
+                    EVENT_INIT,
+                    EVENT_MODE)) {
+        cerr << "Error event create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    
 
     /**************************************************************************************/
     /* 	Mutex creation                                                                    */
@@ -128,6 +175,11 @@ void Tasks::Init() {
         cerr << "Error task create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
+    if (err = rt_task_create(&th_calibration, "th_calibration", 0, PRIORITY_TBAT, 0)) {
+        cerr << "Error task create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    
     cout << "Tasks created successfully" << endl << flush;
 
     /**************************************************************************************/
@@ -176,7 +228,10 @@ void Tasks::Run() {
     cerr << "Error task start: " << strerror(-err) << endl << flush;
     exit(EXIT_FAILURE);
     }
-
+    if (err = rt_task_start(&th_calibration, (void(*)(void*)) & Tasks::Calibration, this)) {
+    cerr << "Error task start: " << strerror(-err) << endl << flush;
+    exit(EXIT_FAILURE);
+    }
     cout << "Tasks launched" << endl << flush;
 }
 
@@ -195,6 +250,7 @@ void Tasks::Join() {
     rt_sem_broadcast(&sem_barrier);
     pause();
 }
+
 
 /**
  * @brief Thread handling server communication with the monitor.
@@ -448,13 +504,10 @@ void Tasks::UpdateBatteryLevel()
             WriteInQueue(&q_messageToMon,level);
         }
         cout << endl << flush;
-    
-        
-        
-       
      }
 }
 
+<<<<<<< HEAD
 void Tasks::receiveFromMon()
 {
     Message * msgRcv ; 
@@ -526,3 +579,54 @@ void Tasks::receiveFromMon()
         }
     }
 }
+=======
+
+
+void Tasks::Calibration(void *arg) {
+    
+    rt_event_wait(find_Arena,0);
+    cout << "event flag find arena received";
+    rt_event_signal(Envoi,0); //Stop envoi
+    Img image = Camera
+    
+    
+}
+
+void Tasks::ThComRobot()
+{
+    int err;
+    while  (1)
+    {
+        //:comRobot()?comRobotEventFlag;     // A MODIFIER : Doit recuperer la valeur de l'event comRobot() et le stocker dans comRobotEventFlag
+        if (comRobotEventFlag == 1)            //1 <=> START
+        {
+            err = robot.Open();
+            if (err != -1) 
+            {
+                msgSend = new Message(MESSAGE_ANSWER_ACK);
+                //:comRobotStartEvent!START; // A MODIFIER : Doit signaler "START" dans l'évenement comRobotStartEvent
+            }
+            else
+            {
+                msgSend = new Message(MESSAGE_ANSWER_NACK);
+            }    
+        }
+        else
+        {
+            //:comRobotStartEvent!STOP;  // A MODIFIER : Doit signaler "STOP" dans l'évenement comRobotStartEvent
+            if (comRobotEventFlag == 2)   //2<=>LOST 
+            {
+                msgSend = new Message(COMMUNICATION_LOST);
+            }
+            else if (comRobotEventFlag == 3) //3<=>STOP
+            {
+                stopRobot = 1;
+                robot.Close();
+                msgSend = new Message(MESSAGE_COM_CLOSED);
+            }
+        }
+    WriteInQueue(&q_messageToMon,msgSend);
+    }
+}
+
+>>>>>>> e3cfe3ae789d538708ba67717a39c3635bc91ac2

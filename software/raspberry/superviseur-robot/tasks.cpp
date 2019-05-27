@@ -348,43 +348,43 @@ void Tasks::SendToMonTask(void* arg) {
 /**
  * @brief Thread receiving data from monitor.
  */
-void Tasks::ReceiveFromMonTask(void *arg) {
-    Message *msgRcv;
-    
-    cout << "Start " << __PRETTY_FUNCTION__ << endl << flush;
-    // Synchronization barrier (waiting that all tasks are starting)
-    rt_sem_p(&sem_barrier, TM_INFINITE);
-    
-    /**************************************************************************************/
-    /* The task receiveFromMon starts here                                                */
-    /**************************************************************************************/
-    rt_sem_p(&sem_serverOk, TM_INFINITE);
-    cout << "Received message from monitor activated" << endl << flush;
-
-    while (1) {
-        msgRcv = monitor.Read();
-        cout << "Rcv <= " << msgRcv->ToString() << endl << flush;
-
-        if (msgRcv->CompareID(MESSAGE_MONITOR_LOST)) {
-            delete(msgRcv);
-            exit(-1);
-        } else if (msgRcv->CompareID(MESSAGE_ROBOT_COM_OPEN)) {
-            rt_sem_v(&sem_openComRobot);
-        } else if (msgRcv->CompareID(MESSAGE_ROBOT_START_WITHOUT_WD)) {
-            rt_sem_v(&sem_startRobot);
-        } else if (msgRcv->CompareID(MESSAGE_ROBOT_GO_FORWARD) ||
-                msgRcv->CompareID(MESSAGE_ROBOT_GO_BACKWARD) ||
-                msgRcv->CompareID(MESSAGE_ROBOT_GO_LEFT) ||
-                msgRcv->CompareID(MESSAGE_ROBOT_GO_RIGHT) ||
-                msgRcv->CompareID(MESSAGE_ROBOT_STOP)) {
-
-            rt_mutex_acquire(&mutex_move, TM_INFINITE);
-            move = msgRcv->GetID();
-            rt_mutex_release(&mutex_move);
-        }
-        delete(msgRcv); // mus be deleted manually, no consumer
-    }
-}
+//void Tasks::ReceiveFromMonTask(void *arg) {
+//    Message *msgRcv;
+//    
+//    cout << "Start " << __PRETTY_FUNCTION__ << endl << flush;
+//    // Synchronization barrier (waiting that all tasks are starting)
+//    rt_sem_p(&sem_barrier, TM_INFINITE);
+//    
+//    /**************************************************************************************/
+//    /* The task receiveFromMon starts here                                                */
+//    /**************************************************************************************/
+//    rt_sem_p(&sem_serverOk, TM_INFINITE);
+//    cout << "Received message from monitor activated" << endl << flush;
+//
+//    while (1) {
+//        msgRcv = monitor.Read();
+//        cout << "Rcv <= " << msgRcv->ToString() << endl << flush;
+//
+//        if (msgRcv->CompareID(MESSAGE_MONITOR_LOST)) {
+//            delete(msgRcv);
+//            exit(-1);
+//        } else if (msgRcv->CompareID(MESSAGE_ROBOT_COM_OPEN)) {
+//            rt_sem_v(&sem_openComRobot);
+//        } else if (msgRcv->CompareID(MESSAGE_ROBOT_START_WITHOUT_WD)) {
+//            rt_sem_v(&sem_startRobot);
+//        } else if (msgRcv->CompareID(MESSAGE_ROBOT_GO_FORWARD) ||
+//                msgRcv->CompareID(MESSAGE_ROBOT_GO_BACKWARD) ||
+//                msgRcv->CompareID(MESSAGE_ROBOT_GO_LEFT) ||
+//                msgRcv->CompareID(MESSAGE_ROBOT_GO_RIGHT) ||
+//                msgRcv->CompareID(MESSAGE_ROBOT_STOP)) {
+//
+//            rt_mutex_acquire(&mutex_move, TM_INFINITE);
+//            move = msgRcv->GetID();
+//            rt_mutex_release(&mutex_move);
+//        }
+//        delete(msgRcv); // mus be deleted manually, no consumer
+//    }
+//}
 
 /**
  * @brief Thread opening communication with the robot.

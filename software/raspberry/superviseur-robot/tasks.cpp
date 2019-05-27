@@ -34,17 +34,22 @@
 //start robot
 #define EVENT_STARTNOWD 0x1
 #define EVENT_STARTWD 0x2
+//start watchdog
+#define EVENT_SIGNALSTARTWD 0x1 //internal signal to start the watchdog
 //Start communication
 #define EVENT_COMROBOTSTART 0x1
 #define EVENT_COMROBOTSTOP 0x2
 #define EVENT_COMROBOTLOST 0x4
 //internal gestion_robot_signals
 #define EVENT_COMROBOTISSTARTED 0x1    
+//Find Arena 
+#define EVENT_FINDARENNA 0x1
 //arena validity
 #define EVENT_ARENAOK 0x1
 #define EVENT_ARENANOK 0x2
 //camera sending stops
 #define EVENT_ENVOIRESUME 0x1
+#define EVENT_ENVOISTOP 0x1
 
 //Declaration of event MASK
 #define MASK_WAITALL 0xFFFF
@@ -461,27 +466,41 @@ void Tasks::MoveTask(void *arg) {
     /**************************************************************************************/
     /* The task starts here                                                               */
     /**************************************************************************************/
-    rt_task_set_periodic(NULL, TM_NOW, 100000000);
+    // rt_task_set_periodic(NULL, TM_NOW, 100000000);
 
-    while (1) {
-        rt_task_wait_period(NULL);
-        cout << "Periodic movement update";
-        rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
-        rs = robotStarted;
-        rt_mutex_release(&mutex_robotStarted);
-        if (rs == 1) {
-            rt_mutex_acquire(&mutex_move, TM_INFINITE);
-            cpMove = move;
-            rt_mutex_release(&mutex_move);
+    // while (1) {
+    //     rt_task_wait_period(NULL);
+    //     cout << "Periodic movement update";
+    //     rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
+    //     rs = robotStarted;
+    //     rt_mutex_release(&mutex_robotStarted);
+    //     if (rs == 1) {
+    //         rt_mutex_acquire(&mutex_move, TM_INFINITE);
+    //         cpMove = move;
+    //         rt_mutex_release(&mutex_move);
             
-            cout << " move: " << cpMove;
+    //         cout << " move: " << cpMove;
             
-            rt_mutex_acquire(&mutex_robot, TM_INFINITE);
-            robot.Write(new Message((MessageID)cpMove));
-            rt_mutex_release(&mutex_robot);
-        }
-        cout << endl << flush;
+    //         rt_mutex_acquire(&mutex_robot, TM_INFINITE);
+    //         robot.Write(new Message((MessageID)cpMove));
+    //         rt_mutex_release(&mutex_robot);
+    //     }
+    //     cout << endl << flush;
+    // }
+
+    //wait for communication started
+    int compteurEchec = 0;
+    int eventReturn = 0;
+    rt_event_wait(&event_comRobotStartEvent, EVENT_COMROBOTISSTARTED, &eventReturn, TM_INFINITE);
+    //wait for start robot signal
+    rt_event_wait(&event_startRobot, EVENT_STARTWD | EVENT_STARTWD, &eventReturn, TM_INFINITE);
+    rt_event_clear(&event_startRobot, EVENT_STARTWD | EVENT_STARTWD, null);
+    if (eventReturn == EVENT_STARTWD)
+    {
+        rt_event_signal(&event_WD, EVENT_SIGNALSTARTWD);
+        err = ComRobot::Write(Message::StartWithWD())
     }
+
 }
 
 /**
@@ -617,8 +636,10 @@ void Tasks::receiveFromMon()
 void Tasks::Calibration(void *arg) {
     
     unsigned long mask_r ;
-    rt_event_wait(event_findArena,MASK_WAITALL,&mask_r,EVENT_MODE);
-    if(mask_r);
+    rt_event_wait(event_findArena,MASK_WAITALL,&mask_r,EV_ALL); //EV_ANY (OR), EV_ALL (AND)
+    if(mask_r == EVENT_FINDARENNA){
+        rt_event_signal()
+    }
     cout << "event flag find arena received";
     rt_event_signal(Envoi,0); //Stop envoi
     Img image = camera.

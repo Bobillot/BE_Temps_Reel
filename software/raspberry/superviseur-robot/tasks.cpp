@@ -149,6 +149,7 @@ void Tasks::Init() {
         cerr << "Error mutex create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
+
     if (err = rt_mutex_create(&mutex_shr_stopRobot, NULL)) {
         cerr << "Error mutex create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
@@ -208,10 +209,10 @@ void Tasks::Init() {
         cerr << "Error task create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
-    if (err = rt_task_create(&th_startRobot, "th_startRobot", 0, PRIORITY_TSTARTROBOT, 0)) {
-        cerr << "Error task create: " << strerror(-err) << endl << flush;
-        exit(EXIT_FAILURE);
-    }
+//    if (err = rt_task_create(&th_startRobot, "th_startRobot", 0, PRIORITY_TSTARTROBOT, 0)) {
+//        cerr << "Error task create: " << strerror(-err) << endl << flush;
+//        exit(EXIT_FAILURE);
+//    }
     if (err = rt_task_create(&th_move, "th_move", 0, PRIORITY_TMOVE, 0)) {
         cerr << "Error task create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
@@ -270,10 +271,10 @@ void Tasks::Run() {
         cerr << "Error task start: " << strerror(-err) << endl << flush;                            // Il doit falloir le supprimer maintenant qu'on en a fait notre version
         exit(EXIT_FAILURE);
     }
-    if (err = rt_task_start(&th_startRobot, (void(*)(void*)) & Tasks::StartRobotTask, this)) {
-        cerr << "Error task start: " << strerror(-err) << endl << flush;
-        exit(EXIT_FAILURE);
-    }
+//    if (err = rt_task_start(&th_startRobot, (void(*)(void*)) & Tasks::StartRobotTask, this)) {
+//        cerr << "Error task start: " << strerror(-err) << endl << flush;
+//        exit(EXIT_FAILURE);
+//    }
     if (err = rt_task_start(&th_move, (void(*)(void*)) & Tasks::MoveTask, this)) {
         cerr << "Error task start: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
@@ -444,35 +445,35 @@ void Tasks::OpenComRobot(void *arg) {
 /**
  * @brief Thread starting the communication with the robot.
  */
-void Tasks::StartRobotTask(void *arg) {
-    cout << "Start " << __PRETTY_FUNCTION__ << endl << flush;
-    // Synchronization barrier (waiting that all tasks are starting)
-    rt_sem_p(&sem_barrier, TM_INFINITE);
-    // TODO : remove this task
-    /**************************************************************************************/
-    /* The task startRobot starts here                                                    */
-    /**************************************************************************************/
-    while (1) {
-
-        Message * msgSend;
-        rt_sem_p(&sem_startRobot, TM_INFINITE);
-        cout << "Start robot without watchdog (";
-        rt_mutex_acquire(&mutex_robot, TM_INFINITE);
-        msgSend = robot.Write(robot.StartWithoutWD());
-        rt_mutex_release(&mutex_robot);
-        cout << msgSend->GetID();
-        cout << ")" << endl;
-
-        cout << "Movement answer: " << msgSend->ToString() << endl << flush;
-        WriteInQueue(&q_messageToMon, msgSend);  // msgSend will be deleted by sendToMon
-
-        if (msgSend->GetID() == MESSAGE_ANSWER_ACK) {
-            rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
-            robotStarted = 1;
-            rt_mutex_release(&mutex_robotStarted);
-        }
-    }
-}
+//void Tasks::StartRobotTask(void *arg) {
+//    cout << "Start " << __PRETTY_FUNCTION__ << endl << flush;
+//    // Synchronization barrier (waiting that all tasks are starting)
+//    rt_sem_p(&sem_barrier, TM_INFINITE);
+//    // TODO : remove this task
+//    /**************************************************************************************/
+//    /* The task startRobot starts here                                                    */
+//    /**************************************************************************************/
+//    while (1) {
+//
+//        Message * msgSend;
+//        rt_sem_p(&sem_startRobot, TM_INFINITE);
+//        cout << "Start robot without watchdog (";
+//        rt_mutex_acquire(&mutex_robot, TM_INFINITE);
+//        msgSend = robot.Write(robot.StartWithoutWD());
+//        rt_mutex_release(&mutex_robot);
+//        cout << msgSend->GetID();
+//        cout << ")" << endl;
+//
+//        cout << "Movement answer: " << msgSend->ToString() << endl << flush;
+//        WriteInQueue(&q_messageToMon, msgSend);  // msgSend will be deleted by sendToMon
+//
+//        if (msgSend->GetID() == MESSAGE_ANSWER_ACK) {
+//            rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
+//            robotStarted = 1;
+//            rt_mutex_release(&mutex_robotStarted);
+//        }
+//    }
+//}
 
 /**
  * @brief Thread handling control of the robot.

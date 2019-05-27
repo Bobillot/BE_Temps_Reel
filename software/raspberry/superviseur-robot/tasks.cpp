@@ -198,6 +198,10 @@ void Tasks::Init() {
         cerr << "Error task create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
+    if (err = rt_task_create(&th_comRobot, "th_comRobot", 0, PRIORITY_TBAT, 0)) {
+        cerr << "Error task create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
     
     cout << "Tasks created successfully" << endl << flush;
 
@@ -231,8 +235,8 @@ void Tasks::Run() {
         cerr << "Error task start: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
-    if (err = rt_task_start(&th_openComRobot, (void(*)(void*)) & Tasks::OpenComRobot, this)) {
-        cerr << "Error task start: " << strerror(-err) << endl << flush;
+    if (err = rt_task_start(&th_openComRobot, (void(*)(void*)) & Tasks::OpenComRobot, this)) {      //Ce thread remplit le meme role que th_comRobot
+        cerr << "Error task start: " << strerror(-err) << endl << flush;                            // Il doit falloir le supprimer maintenant qu'on en a fait notre version
         exit(EXIT_FAILURE);
     }
     if (err = rt_task_start(&th_startRobot, (void(*)(void*)) & Tasks::StartRobotTask, this)) {
@@ -248,6 +252,10 @@ void Tasks::Run() {
     exit(EXIT_FAILURE);
     }
     if (err = rt_task_start(&th_calibration, (void(*)(void*)) & Tasks::Calibration, this)) {
+    cerr << "Error task start: " << strerror(-err) << endl << flush;
+    exit(EXIT_FAILURE);
+    }
+    if (err = rt_task_start(&th_comRobot, (void(*)(void*)) & Tasks::ThComRobot(), this)) {
     cerr << "Error task start: " << strerror(-err) << endl << flush;
     exit(EXIT_FAILURE);
     }

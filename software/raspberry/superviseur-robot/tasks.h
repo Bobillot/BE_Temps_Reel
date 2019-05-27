@@ -152,14 +152,15 @@ private:
      */
     void MoveTask(void *arg);
     
-    /*perso*/
-    void UpdateBatteryLevel();
-    /* perso*/
-    
+    void UpdateBatteryLevel();   
     /**
      * @brief Thread handling calibration requests
      */
     void Calibration(void *arg);
+    
+    void ThComRobot():
+    
+    void Gest_Img();
     
     /**********************************************************************/
     /* Queue services                                                     */

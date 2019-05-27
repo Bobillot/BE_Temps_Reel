@@ -40,11 +40,14 @@
 #define EVENT_COMROBOTLOST 0x4
 //internal gestion_robot_signals
 #define EVENT_COMROBOTISSTARTED 0x1    
+//Find Arena 
+#define EVENT_FINDARENNA 0x1
 //arena validity
 #define EVENT_ARENAOK 0x1
 #define EVENT_ARENANOK 0x2
 //camera sending stops
 #define EVENT_ENVOIRESUME 0x1
+#define EVENT_ENVOISTOP 0x1
 
 //Declaration of event MASK
 #define MASK_WAITALL 0xFFFF
@@ -608,8 +611,10 @@ void Tasks::receiveFromMon()
 void Tasks::Calibration(void *arg) {
     
     unsigned long mask_r ;
-    rt_event_wait(event_findArena,MASK_WAITALL,&mask_r,EVENT_MODE);
-    if(mask_r);
+    rt_event_wait(event_findArena,MASK_WAITALL,&mask_r,EV_ALL); //EV_ANY (OR), EV_ALL (AND)
+    if(mask_r == EVENT_FINDARENNA){
+        rt_event_signal()
+    }
     cout << "event flag find arena received";
     rt_event_signal(Envoi,0); //Stop envoi
     Img image = camera.

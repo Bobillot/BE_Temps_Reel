@@ -69,8 +69,8 @@ private:
     RT_EVENT event_WD;
     RT_EVENT event_findArena;
     //camera
-    RT_EVENT event_arenaValid
-    RT_EVENT event_envoi
+    RT_EVENT event_arenaValid;
+    RT_EVENT event_envoi;
 
     /**********************************************************************/
     /* Shared data                                                        */
@@ -110,6 +110,8 @@ private:
     RT_SEM sem_openComRobot;
     RT_SEM sem_serverOk;
     RT_SEM sem_startRobot;
+    RT_SEM sem_startCamera;
+    RT_SEM sem_findArena
 
     /**********************************************************************/
     /* Message queues                                                     */

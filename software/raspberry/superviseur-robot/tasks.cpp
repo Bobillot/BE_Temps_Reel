@@ -553,23 +553,22 @@ void Tasks::receiveFromMon()
                 return; 
             case (MESSAGE_ROBOT_COM_OPEN): 
                 //comRobot!START
-                //rt_event_signal()
+                rt_event_signal(event_comRobot, EVENT_COMROBOTSTART);
                 break; 
             case (MESSAGE_ROBOT_COM_CLOSE): 
                 //comRobot!STOP
-                //rt_event_signal()
+                rt_event_signal(event_comRobot, EVENT_COMROBOTSTOP);
                 break; 
             case (MESSAGE_ROBOT_START_WITH_WD):
                 //startRobot!WD
-                //rt_event_signal()
+                rt_event_signal(event_startRobot, EVENT_STARTWD); 
                 break; 
             case (MESSAGE_ROBOT_START_WITHOUT_WD): 
                 //startRobot!NOWD
-                //rt_event_signal()
+                rt_event_signal(event_startRobot, EVENT_STARTNOWD);
                 break; 
             case (MESSAGE_ROBOT_STOP): 
                 stopRobot = true ; 
-                //rt_event_signal()
                 break; 
             case (MESSAGE_CAM_OPEN):
                 //startCamera!
@@ -577,7 +576,6 @@ void Tasks::receiveFromMon()
                 break;
             case (MESSAGE_CAM_CLOSE): 
                 stopCamera = true ; 
-                //rt_event_signal()
                 break; 
             case (MESSAGE_CAM_ASK_ARENA): 
                 //findArena!

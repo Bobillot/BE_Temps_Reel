@@ -745,10 +745,12 @@ void Tasks::ThWD()
     unsigned long WDEventFlag;
     while(1)
     {
-        rt_event_wait(&event_WD,MASK_WAITALL,&WDEventFlag,EVENT_MODE);
+        rt_event_wait(&event_WD,MASK_WAITALL,&WDEventFlag,EV_ALL);
         if (WDEventFlag == EVENT_SIGNALSTARTWD)
         {
+            rt_mutex_acquire(&mutex_robot, TM_INFINITE);
             robot.Write(new Message(MESSAGE_ROBOT_RELOAD_WD));
+            rt_mutex_release(&mutex_robot);
             rt_task_wait_period(NULL);
         }
     }

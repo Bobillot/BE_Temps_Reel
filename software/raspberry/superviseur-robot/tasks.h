@@ -81,7 +81,7 @@ private:
     int robotStarted = 0;
     int move = MESSAGE_ROBOT_STOP;
     int shr_stopRobot = 0;
-    int shr_calculPosition = 0;
+    int shr_calculPosition = 0; // START => 1 STOP => 0
     int shr_stopCamera = 0;
     Arena shr_arena;
     

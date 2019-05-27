@@ -161,6 +161,15 @@ void Tasks::Init() {
         cerr << "Error semaphore create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
+    if (err = rt_sem_create(&sem_startCamera, NULL, 0, S_FIFO)) {
+        cerr << "Error semaphore create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    if (err = rt_sem_create(&sem_findArena, NULL, 0, S_FIFO)) {
+        cerr << "Error semaphore create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+  
     cout << "Semaphores created successfully" << endl << flush;
 
     /**************************************************************************************/
@@ -201,7 +210,7 @@ void Tasks::Init() {
     if (err = rt_task_create(&th_comRobot, "th_comRobot", 0, PRIORITY_TBAT, 0)) {
         cerr << "Error task create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
-    }
+    }              
     
     cout << "Tasks created successfully" << endl << flush;
 
@@ -553,49 +562,49 @@ void Tasks::receiveFromMon()
                 return; 
             case (MESSAGE_ROBOT_COM_OPEN): 
                 //comRobot!START
-                rt_event_signal(event_comRobot, EVENT_COMROBOTSTART);
+                rt_event_signal(&event_comRobot, EVENT_COMROBOTSTART);
                 break; 
             case (MESSAGE_ROBOT_COM_CLOSE): 
                 //comRobot!STOP
-                rt_event_signal(event_comRobot, EVENT_COMROBOTSTOP);
+                rt_event_signal(&event_comRobot, EVENT_COMROBOTSTOP);
                 break; 
             case (MESSAGE_ROBOT_START_WITH_WD):
                 //startRobot!WD
-                rt_event_signal(event_startRobot, EVENT_STARTWD); 
+                rt_event_signal(&event_startRobot, EVENT_STARTWD); 
                 break; 
             case (MESSAGE_ROBOT_START_WITHOUT_WD): 
                 //startRobot!NOWD
-                rt_event_signal(event_startRobot, EVENT_STARTNOWD);
+                rt_event_signal(&event_startRobot, EVENT_STARTNOWD);
                 break; 
             case (MESSAGE_ROBOT_STOP): 
                 stopRobot = true ; 
                 break; 
             case (MESSAGE_CAM_OPEN):
                 //startCamera!
-                //rt_event_signal()
+                rt_sem_p(&sem_startCamera, TM_INFINITE);
                 break;
             case (MESSAGE_CAM_CLOSE): 
                 stopCamera = true ; 
                 break; 
             case (MESSAGE_CAM_ASK_ARENA): 
                 //findArena!
-                //rt_event_signal()
+                rt_sem_p(&sem_findArena, TM_INFINITE); 
                 break; 
             case (MESSAGE_CAM_ARENA_CONFIRM):
                 //arenaValid!OK
-                //rt_event_signal()
+                rt_event_signal(&event_arenaValid, EVENT_ARENAOK); 
                 break; 
             case (MESSAGE_CAM_ARENA_INFIRM): 
                 //arenaValid!KO
-                //rt_event_signal()
+                rt_event_signal(&event_arenaValid, EVENT_ARENANOK); 
                 break; 
             case (MESSAGE_ROBOT_CAM_POSITION_COMPUTE_START):
                 //calculPosition!START
-                //rt_event_signal()
+                shr_calculPosition = 1;  
                 break;     
             case (MESSAGE_CAM_POSITION_COMPUTE_STOP): 
                 //calculPosition!STOP
-                //rt_event_signal()
+                shr_calculPosition = 0; 
                 break; 
             case (MESSAGE_ROBOT_GO_FORWARD || MESSAGE_ROBOT_GO_LEFT || MESSAGE_ROBOT_GO_RIGHT || MESSAGE_ROBOT_STOP):
                 move = msgRcv->GetId() ; 

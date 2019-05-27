@@ -710,6 +710,7 @@ void Tasks::ThComRobot()
 {
     int err;
     unsigned long comRobotEventFlag;
+    Message *msgSend;
     while  (1)
     {
         rt_event_wait(&event_comRobot,MASK_WAITALL,&comRobotEventFlag,EVENT_MODE);   //:comRobot()?comRobotEventFlag;
@@ -749,6 +750,7 @@ void Tasks::Gest_Img()
 {
 int err;
 bool sendImages;
+Message * msg;
 
     while (1)
     {

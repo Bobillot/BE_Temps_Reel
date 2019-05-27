@@ -485,12 +485,14 @@ void Tasks::OpenComRobot(void *arg) {
         }
         rt_event_clear(&event_comRobot,MASK_WAITALL,NULL);
         //check somewhere here
+        if(debugTP)
+            cout << "Received : " << msgSend->GetID() << endl;
         WriteInQueue(&q_messageToMon,msgSend);
     }
 }
 
 /**
- * @brief Thread starting the communication with the robot.
+ * @brief Thread starting the communication with the robot. 
  */
 //void Tasks::StartRobotTask(void *arg) {
 //    cout << "Start " << __PRETTY_FUNCTION__ << endl << flush;

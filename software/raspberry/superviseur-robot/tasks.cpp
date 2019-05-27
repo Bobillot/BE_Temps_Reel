@@ -149,6 +149,10 @@ void Tasks::Init() {
         cerr << "Error mutex create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
+    if (err = rt_mutex_create(&mutex_shr_arena, NULL)) {
+        cerr << "Error mutex create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
     cout << "Mutexes created successfully" << endl << flush;
 
     /**************************************************************************************/
@@ -271,21 +275,20 @@ void Tasks::Run() {
         exit(EXIT_FAILURE);
     }
     if (err = rt_task_start(&th_batLevelUpdate, (void(*)(void*)) & Tasks::UpdateBatteryLevel, this)) {
-    cerr << "Error task start: " << strerror(-err) << endl << flush;
-    exit(EXIT_FAILURE);
+        cerr << "Error task start: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
     }
     if (err = rt_task_start(&th_calibration, (void(*)(void*)) & Tasks::Calibration, this)) {
-    cerr << "Error task start: " << strerror(-err) << endl << flush;
-    exit(EXIT_FAILURE);
+        cerr << "Error task start: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
     }
     if (err = rt_task_start(&th_comRobot, (void(*)(void*)) & Tasks::ThComRobot(), this)) {
-    cerr << "Error task start: " << strerror(-err) << endl << flush;
-    exit(EXIT_FAILURE);
+        cerr << "Error task start: " << strerror(-err) << endl << flush;
+       exit(EXIT_FAILURE);
     }
-    
     if (err = rt_task_start(&th_WD, (void(*)(void*)) & Tasks::ThWD(), this)) {
-    cerr << "Error task start: " << strerror(-err) << endl << flush;
-    exit(EXIT_FAILURE);
+       cerr << "Error task start: " << strerror(-err) << endl << flush;
+       exit(EXIT_FAILURE);
     }
     
     cout << "Tasks launched" << endl << flush;

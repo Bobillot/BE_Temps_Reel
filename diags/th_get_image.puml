@@ -20,7 +20,6 @@ while ( )
 
     :startCamera;
     note : sync sémaphore
-    :reset(signalCamera);
 
     :err = camera.Open();
     if(err) then (camera_ok)

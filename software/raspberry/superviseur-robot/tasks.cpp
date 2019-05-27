@@ -34,6 +34,8 @@
 //start robot
 #define EVENT_STARTNOWD 0x1
 #define EVENT_STARTWD 0x2
+//start watchdog
+#define EVENT_SIGNALSTARTWD 0x1 //internal signal to start the watchdog
 //Start communication
 #define EVENT_COMROBOTSTART 0x1
 #define EVENT_COMROBOTSTOP 0x2
@@ -168,6 +170,15 @@ void Tasks::Init() {
         cerr << "Error semaphore create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
+    if (err = rt_sem_create(&sem_startCamera, NULL, 0, S_FIFO)) {
+        cerr << "Error semaphore create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    if (err = rt_sem_create(&sem_findArena, NULL, 0, S_FIFO)) {
+        cerr << "Error semaphore create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+  
     cout << "Semaphores created successfully" << endl << flush;
 
     /**************************************************************************************/
@@ -208,7 +219,7 @@ void Tasks::Init() {
     if (err = rt_task_create(&th_comRobot, "th_comRobot", 0, PRIORITY_TBAT, 0)) {
         cerr << "Error task create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
-    }
+    }              
     
     cout << "Tasks created successfully" << endl << flush;
 
@@ -341,43 +352,43 @@ void Tasks::SendToMonTask(void* arg) {
 /**
  * @brief Thread receiving data from monitor.
  */
-void Tasks::ReceiveFromMonTask(void *arg) {
-    Message *msgRcv;
-    
-    cout << "Start " << __PRETTY_FUNCTION__ << endl << flush;
-    // Synchronization barrier (waiting that all tasks are starting)
-    rt_sem_p(&sem_barrier, TM_INFINITE);
-    
-    /**************************************************************************************/
-    /* The task receiveFromMon starts here                                                */
-    /**************************************************************************************/
-    rt_sem_p(&sem_serverOk, TM_INFINITE);
-    cout << "Received message from monitor activated" << endl << flush;
-
-    while (1) {
-        msgRcv = monitor.Read();
-        cout << "Rcv <= " << msgRcv->ToString() << endl << flush;
-
-        if (msgRcv->CompareID(MESSAGE_MONITOR_LOST)) {
-            delete(msgRcv);
-            exit(-1);
-        } else if (msgRcv->CompareID(MESSAGE_ROBOT_COM_OPEN)) {
-            rt_sem_v(&sem_openComRobot);
-        } else if (msgRcv->CompareID(MESSAGE_ROBOT_START_WITHOUT_WD)) {
-            rt_sem_v(&sem_startRobot);
-        } else if (msgRcv->CompareID(MESSAGE_ROBOT_GO_FORWARD) ||
-                msgRcv->CompareID(MESSAGE_ROBOT_GO_BACKWARD) ||
-                msgRcv->CompareID(MESSAGE_ROBOT_GO_LEFT) ||
-                msgRcv->CompareID(MESSAGE_ROBOT_GO_RIGHT) ||
-                msgRcv->CompareID(MESSAGE_ROBOT_STOP)) {
-
-            rt_mutex_acquire(&mutex_move, TM_INFINITE);
-            move = msgRcv->GetID();
-            rt_mutex_release(&mutex_move);
-        }
-        delete(msgRcv); // mus be deleted manually, no consumer
-    }
-}
+//void Tasks::ReceiveFromMonTask(void *arg) {
+//    Message *msgRcv;
+//    
+//    cout << "Start " << __PRETTY_FUNCTION__ << endl << flush;
+//    // Synchronization barrier (waiting that all tasks are starting)
+//    rt_sem_p(&sem_barrier, TM_INFINITE);
+//    
+//    /**************************************************************************************/
+//    /* The task receiveFromMon starts here                                                */
+//    /**************************************************************************************/
+//    rt_sem_p(&sem_serverOk, TM_INFINITE);
+//    cout << "Received message from monitor activated" << endl << flush;
+//
+//    while (1) {
+//        msgRcv = monitor.Read();
+//        cout << "Rcv <= " << msgRcv->ToString() << endl << flush;
+//
+//        if (msgRcv->CompareID(MESSAGE_MONITOR_LOST)) {
+//            delete(msgRcv);
+//            exit(-1);
+//        } else if (msgRcv->CompareID(MESSAGE_ROBOT_COM_OPEN)) {
+//            rt_sem_v(&sem_openComRobot);
+//        } else if (msgRcv->CompareID(MESSAGE_ROBOT_START_WITHOUT_WD)) {
+//            rt_sem_v(&sem_startRobot);
+//        } else if (msgRcv->CompareID(MESSAGE_ROBOT_GO_FORWARD) ||
+//                msgRcv->CompareID(MESSAGE_ROBOT_GO_BACKWARD) ||
+//                msgRcv->CompareID(MESSAGE_ROBOT_GO_LEFT) ||
+//                msgRcv->CompareID(MESSAGE_ROBOT_GO_RIGHT) ||
+//                msgRcv->CompareID(MESSAGE_ROBOT_STOP)) {
+//
+//            rt_mutex_acquire(&mutex_move, TM_INFINITE);
+//            move = msgRcv->GetID();
+//            rt_mutex_release(&mutex_move);
+//        }
+//        delete(msgRcv); // mus be deleted manually, no consumer
+//    }
+//}
 
 /**
  * @brief Thread opening communication with the robot.
@@ -459,27 +470,41 @@ void Tasks::MoveTask(void *arg) {
     /**************************************************************************************/
     /* The task starts here                                                               */
     /**************************************************************************************/
-    rt_task_set_periodic(NULL, TM_NOW, 100000000);
+    // rt_task_set_periodic(NULL, TM_NOW, 100000000);
 
-    while (1) {
-        rt_task_wait_period(NULL);
-        cout << "Periodic movement update";
-        rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
-        rs = robotStarted;
-        rt_mutex_release(&mutex_robotStarted);
-        if (rs == 1) {
-            rt_mutex_acquire(&mutex_move, TM_INFINITE);
-            cpMove = move;
-            rt_mutex_release(&mutex_move);
+    // while (1) {
+    //     rt_task_wait_period(NULL);
+    //     cout << "Periodic movement update";
+    //     rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
+    //     rs = robotStarted;
+    //     rt_mutex_release(&mutex_robotStarted);
+    //     if (rs == 1) {
+    //         rt_mutex_acquire(&mutex_move, TM_INFINITE);
+    //         cpMove = move;
+    //         rt_mutex_release(&mutex_move);
             
-            cout << " move: " << cpMove;
+    //         cout << " move: " << cpMove;
             
-            rt_mutex_acquire(&mutex_robot, TM_INFINITE);
-            robot.Write(new Message((MessageID)cpMove));
-            rt_mutex_release(&mutex_robot);
-        }
-        cout << endl << flush;
+    //         rt_mutex_acquire(&mutex_robot, TM_INFINITE);
+    //         robot.Write(new Message((MessageID)cpMove));
+    //         rt_mutex_release(&mutex_robot);
+    //     }
+    //     cout << endl << flush;
+    // }
+
+    //wait for communication started
+    int compteurEchec = 0;
+    int eventReturn = 0;
+    rt_event_wait(&event_comRobotStartEvent, EVENT_COMROBOTISSTARTED, &eventReturn, TM_INFINITE);
+    //wait for start robot signal
+    rt_event_wait(&event_startRobot, EVENT_STARTWD | EVENT_STARTWD, &eventReturn, TM_INFINITE);
+    rt_event_clear(&event_startRobot, EVENT_STARTWD | EVENT_STARTWD, null);
+    if (eventReturn == EVENT_STARTWD)
+    {
+        rt_event_signal(&event_WD, EVENT_SIGNALSTARTWD);
+        err = ComRobot::Write(Message::StartWithWD())
     }
+
 }
 
 /**
@@ -560,49 +585,49 @@ void Tasks::receiveFromMon()
                 return; 
             case (MESSAGE_ROBOT_COM_OPEN): 
                 //comRobot!START
-                rt_event_signal(event_comRobot, EVENT_COMROBOTSTART);
+                rt_event_signal(&event_comRobot, EVENT_COMROBOTSTART);
                 break; 
             case (MESSAGE_ROBOT_COM_CLOSE): 
                 //comRobot!STOP
-                rt_event_signal(event_comRobot, EVENT_COMROBOTSTOP);
+                rt_event_signal(&event_comRobot, EVENT_COMROBOTSTOP);
                 break; 
             case (MESSAGE_ROBOT_START_WITH_WD):
                 //startRobot!WD
-                rt_event_signal(event_startRobot, EVENT_STARTWD); 
+                rt_event_signal(&event_startRobot, EVENT_STARTWD); 
                 break; 
             case (MESSAGE_ROBOT_START_WITHOUT_WD): 
                 //startRobot!NOWD
-                rt_event_signal(event_startRobot, EVENT_STARTNOWD);
+                rt_event_signal(&event_startRobot, EVENT_STARTNOWD);
                 break; 
             case (MESSAGE_ROBOT_STOP): 
                 stopRobot = true ; 
                 break; 
             case (MESSAGE_CAM_OPEN):
                 //startCamera!
-                //rt_event_signal()
+                rt_sem_p(&sem_startCamera, TM_INFINITE);
                 break;
             case (MESSAGE_CAM_CLOSE): 
                 stopCamera = true ; 
                 break; 
             case (MESSAGE_CAM_ASK_ARENA): 
                 //findArena!
-                //rt_event_signal()
+                rt_sem_p(&sem_findArena, TM_INFINITE); 
                 break; 
             case (MESSAGE_CAM_ARENA_CONFIRM):
                 //arenaValid!OK
-                //rt_event_signal()
+                rt_event_signal(&event_arenaValid, EVENT_ARENAOK); 
                 break; 
             case (MESSAGE_CAM_ARENA_INFIRM): 
                 //arenaValid!KO
-                //rt_event_signal()
+                rt_event_signal(&event_arenaValid, EVENT_ARENANOK); 
                 break; 
             case (MESSAGE_ROBOT_CAM_POSITION_COMPUTE_START):
                 //calculPosition!START
-                //rt_event_signal()
+                shr_calculPosition = 1;  
                 break;     
             case (MESSAGE_CAM_POSITION_COMPUTE_STOP): 
                 //calculPosition!STOP
-                //rt_event_signal()
+                shr_calculPosition = 0; 
                 break; 
             case (MESSAGE_ROBOT_GO_FORWARD || MESSAGE_ROBOT_GO_LEFT || MESSAGE_ROBOT_GO_RIGHT || MESSAGE_ROBOT_STOP):
                 move = msgRcv->GetId() ; 

@@ -6,6 +6,12 @@
                 "${workspaceFolder}/**",
                 "/usr/include/**"
             ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/**",
+                    "/usr/include/**"
+                ]
+            },
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c11",

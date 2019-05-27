@@ -27,6 +27,8 @@
 #define PRIORITY_TSTARTROBOT 20
 #define PRIORITY_TCAMERA 21
 #define PRIORITY_TBAT 19
+#define PRIORITY_TGESTIMAGE 31
+#define PRIORITY_TCALIBARENA 32
 
 //Déclaration des events flags
 #define EVENT_INIT 0x0     /* No flags present at init */
@@ -225,10 +227,10 @@ void Tasks::Init() {
         cerr << "Error task create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
-    if (err = rt_task_create(&th_comRobot, "th_comRobot", 0, PRIORITY_TBAT, 0)) {
-        cerr << "Error task create: " << strerror(-err) << endl << flush;
-        exit(EXIT_FAILURE);
-    }              
+//    if (err = rt_task_create(&th_comRobot, "th_comRobot", 0, PRIORITY_TBAT, 0)) {
+//        cerr << "Error task create: " << strerror(-err) << endl << flush;
+//        exit(EXIT_FAILURE);
+//    }              
     
     if (err = rt_task_create(&th_WD, "th_WD", 0, PRIORITY_TWD, 0)) {
         cerr << "Error task create: " << strerror(-err) << endl << flush;
@@ -287,10 +289,10 @@ void Tasks::Run() {
         cerr << "Error task start: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
-    if (err = rt_task_start(&th_comRobot, (void(*)(void*)) & Tasks::ThComRobot(), this)) {
-        cerr << "Error task start: " << strerror(-err) << endl << flush;
-       exit(EXIT_FAILURE);
-    }
+//    if (err = rt_task_start(&th_comRobot, (void(*)(void*)) & Tasks::ThComRobot(), this)) {
+//        cerr << "Error task start: " << strerror(-err) << endl << flush;
+//       exit(EXIT_FAILURE);
+//    }
     if (err = rt_task_start(&th_WD, (void(*)(void*)) & Tasks::ThWD(), this)) {
        cerr << "Error task start: " << strerror(-err) << endl << flush;
        exit(EXIT_FAILURE);
@@ -423,22 +425,57 @@ void Tasks::OpenComRobot(void *arg) {
     /**************************************************************************************/
     /* The task openComRobot starts here                                                  */
     /**************************************************************************************/
-    while (1) {
-        rt_sem_p(&sem_openComRobot, TM_INFINITE);
-        cout << "Open serial com (";
-        rt_mutex_acquire(&mutex_robot, TM_INFINITE);
-        status = robot.Open();
-        rt_mutex_release(&mutex_robot);
-        cout << status;
-        cout << ")" << endl << flush;
-
-        Message * msgSend;
-        if (status < 0) {
-            msgSend = new Message(MESSAGE_ANSWER_NACK);
-        } else {
-            msgSend = new Message(MESSAGE_ANSWER_ACK);
+//    while (1) {
+//        rt_sem_p(&sem_openComRobot, TM_INFINITE);
+//        cout << "Open serial com (";
+//        rt_mutex_acquire(&mutex_robot, TM_INFINITE);
+//        status = robot.Open();
+//        rt_mutex_release(&mutex_robot);
+//        cout << status;
+//        cout << ")" << endl << flush;
+//
+//        Message * msgSend;
+//        if (status < 0) {
+//            msgSend = new Message(MESSAGE_ANSWER_NACK);
+//        } else {
+//            msgSend = new Message(MESSAGE_ANSWER_ACK);
+//        }
+//        WriteInQueue(&q_messageToMon, msgSend); // msgSend will be deleted by sendToMon
+//    }
+    
+    int err;
+    unsigned long comRobotEventFlag;
+    while  (1)
+    {
+        rt_event_wait(&event_comRobot,MASK_WAITALL,&comRobotEventFlag,EVENT_MODE)   //:comRobot()?comRobotEventFlag;
+        if (comRobotEventFlag == EVENT_COMROBOTSTART)            //1 <=> START
+        {
+            err = robot.Open();
+            if (err != -1) 
+            {
+                msgSend = new Message(MESSAGE_ANSWER_ACK);
+                rt_event_signal(&event_comRobot,EVENT_COMROBOTISSTARTED);   //:comRobotStartEvent!START; 
+            }
+            else
+            {
+                msgSend = new Message(MESSAGE_ANSWER_NACK);
+            }    
         }
-        WriteInQueue(&q_messageToMon, msgSend); // msgSend will be deleted by sendToMon
+        else
+        {
+            rt_event_signal(&event_comRobotStartEvent,EVENT_INIT); //:comRobotStartEvent!STOP;  
+            if (comRobotEventFlag == EVENT_COMROBOTLOST)   //2<=>LOST 
+            {
+                msgSend = new Message(COMMUNICATION_LOST);
+            }
+            else if (comRobotEventFlag == EVENT_COMROBOTSTOP) //3<=>STOP
+            {
+                stopRobot = 1;
+                robot.Close();
+                msgSend = new Message(MESSAGE_COM_CLOSED);
+            }
+        }
+    WriteInQueue(&q_messageToMon,msgSend);
     }
 }
 
@@ -781,44 +818,6 @@ void Tasks::Calibration(void *arg) {
         rt_event_signal(event_envoi,EVENT_ENVOIRESUME);
     }
       
-}
-
-void Tasks::ThComRobot()
-{
-    int err;
-    unsigned long comRobotEventFlag;
-    while  (1)
-    {
-        rt_event_wait(&event_comRobot,MASK_WAITALL,&comRobotEventFlag,EVENT_MODE)   //:comRobot()?comRobotEventFlag;
-        if (comRobotEventFlag == EVENT_COMROBOTSTART)            //1 <=> START
-        {
-            err = robot.Open();
-            if (err != -1) 
-            {
-                msgSend = new Message(MESSAGE_ANSWER_ACK);
-                rt_event_signal(&event_comRobot,EVENT_COMROBOTISSTARTED);   //:comRobotStartEvent!START; 
-            }
-            else
-            {
-                msgSend = new Message(MESSAGE_ANSWER_NACK);
-            }    
-        }
-        else
-        {
-            rt_event_signal(&event_comRobotStartEvent,EVENT_INIT); //:comRobotStartEvent!STOP;  
-            if (comRobotEventFlag == EVENT_COMROBOTLOST)   //2<=>LOST 
-            {
-                msgSend = new Message(COMMUNICATION_LOST);
-            }
-            else if (comRobotEventFlag == EVENT_COMROBOTSTOP) //3<=>STOP
-            {
-                stopRobot = 1;
-                robot.Close();
-                msgSend = new Message(MESSAGE_COM_CLOSED);
-            }
-        }
-    WriteInQueue(&q_messageToMon,msgSend);
-    }
 }
 
 

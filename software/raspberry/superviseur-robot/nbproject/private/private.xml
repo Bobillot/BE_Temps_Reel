@@ -6,6 +6,11 @@
     </data>
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
-        <group/>
+        <group>
+            <file>file:/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/messages.h</file>
+            <file>file:/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/tasks.cpp</file>
+            <file>file:/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/messages.cpp</file>
+            <file>file:/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/comrobot.cpp</file>
+        </group>
     </open-files>
 </project-private>

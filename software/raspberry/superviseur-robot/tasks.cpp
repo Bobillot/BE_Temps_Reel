@@ -149,6 +149,11 @@ void Tasks::Init() {
         cerr << "Error mutex create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
+    if (err = rt_mutex_create(&mutex_shr_stopRobot, NULL)) {
+        cerr << "Error mutex create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    
     cout << "Mutexes created successfully" << endl << flush;
 
     /**************************************************************************************/
@@ -441,7 +446,7 @@ void Tasks::StartRobotTask(void *arg) {
     cout << "Start " << __PRETTY_FUNCTION__ << endl << flush;
     // Synchronization barrier (waiting that all tasks are starting)
     rt_sem_p(&sem_barrier, TM_INFINITE);
-    
+    // TODO : remove this task
     /**************************************************************************************/
     /* The task startRobot starts here                                                    */
     /**************************************************************************************/
@@ -473,6 +478,9 @@ void Tasks::StartRobotTask(void *arg) {
 void Tasks::MoveTask(void *arg) {
     int rs;
     int cpMove;
+    int compteurEchec;
+    int eventReturn;
+    int stopRobot;
     
     cout << "Start " << __PRETTY_FUNCTION__ << endl << flush;
     // Synchronization barrier (waiting that all tasks are starting)
@@ -481,41 +489,115 @@ void Tasks::MoveTask(void *arg) {
     /**************************************************************************************/
     /* The task starts here                                                               */
     /**************************************************************************************/
-    // rt_task_set_periodic(NULL, TM_NOW, 100000000);
+    rt_task_set_periodic(NULL, TM_NOW, 100000000);
+    while(1) {
+        //wait for communication started
+        compteurEchec = 0;
+        eventReturn = 0;
+        rt_event_wait(&event_comRobotStartEvent, EVENT_COMROBOTISSTARTED, &eventReturn, TM_INFINITE);
+        //wait for start robot signal
+        rt_event_wait(&event_startRobot, EVENT_STARTWD | EVENT_STARTWD, &eventReturn, TM_INFINITE);
+        rt_event_clear(&event_startRobot, EVENT_STARTWD | EVENT_STARTWD, null);
 
-    // while (1) {
-    //     rt_task_wait_period(NULL);
-    //     cout << "Periodic movement update";
-    //     rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
-    //     rs = robotStarted;
-    //     rt_mutex_release(&mutex_robotStarted);
-    //     if (rs == 1) {
-    //         rt_mutex_acquire(&mutex_move, TM_INFINITE);
-    //         cpMove = move;
-    //         rt_mutex_release(&mutex_move);
-            
-    //         cout << " move: " << cpMove;
-            
-    //         rt_mutex_acquire(&mutex_robot, TM_INFINITE);
-    //         robot.Write(new Message((MessageID)cpMove));
-    //         rt_mutex_release(&mutex_robot);
-    //     }
-    //     cout << endl << flush;
-    // }
+        Message * msg
+        if (eventReturn == EVENT_STARTWD)
+        {
+            rt_event_signal(&event_WD, EVENT_SIGNALSTARTWD);
+            rt_mutex_acquire(&mutex_robot, TM_INFINITE);
+            msg = robot.Write(ComRobot::StartWithWD());
+            rt_mutex_release(&mutex_robot);
+        }
+        else if (eventReturn == EVENT_STARTNOWD)
+        {
+            rt_mutex_acquire(&mutex_robot, TM_INFINITE);
+            msg = robot.Write(ComRobot::StartWithoutWD());
+            rt_mutex_release(&mutex_robot);
+        }
+        else
+            exit(EXIT_FAILURE);
 
-    //wait for communication started
-    int compteurEchec = 0;
-    int eventReturn = 0;
-    rt_event_wait(&event_comRobotStartEvent, EVENT_COMROBOTISSTARTED, &eventReturn, TM_INFINITE);
-    //wait for start robot signal
-    rt_event_wait(&event_startRobot, EVENT_STARTWD | EVENT_STARTWD, &eventReturn, TM_INFINITE);
-    rt_event_clear(&event_startRobot, EVENT_STARTWD | EVENT_STARTWD, null);
-    if (eventReturn == EVENT_STARTWD)
-    {
-        rt_event_signal(&event_WD, EVENT_SIGNALSTARTWD);
-        err = ComRobot::Write(Message::StartWithWD())
+        cout << "Start robot (";
+        cout << msg->GetID();
+        cout << ")" << endl;
+
+        if(ret == MESSAGE_ANSWER_ACK)//robot successfully started
+        {
+            WriteInQueue(&q_messageToMon, msg);
+            rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
+            robotStarted = 1;
+            rt_mutex_release(&mutex_robotStarted);
+            
+            
+            rt_mutex_acquire(&mutex_shr_stopRobot, TM_INFINITE);
+            stopRobot = shr_stopRobot;
+            rt_mutex_release(&mutex_shr_stopRobot);
+            
+            //Moving loop
+            while(compteurEchec < 3 && !stopRobot){
+                rt_task_wait_period(NULL);
+                cout << "Periodic movement update";
+                
+                //maybe not necesary ?
+                rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
+                rs = robotStarted;
+                rt_mutex_release(&mutex_robotStarted);
+                
+                if (rs == 1) {
+                    rt_mutex_acquire(&mutex_move, TM_INFINITE);
+                    cpMove = move;
+                    rt_mutex_release(&mutex_move);
+
+                    cout << " move: " << cpMove;
+
+                    rt_mutex_acquire(&mutex_robot, TM_INFINITE);
+                    msg = robot.Write(new Message((MessageID) cpMove));
+                    rt_mutex_release(&mutex_robot);
+                }
+                cout << endl << flush;
+                
+                //check if message received
+                if(msg != MESSAGE_ANSWER_ACK)
+                    compteurEchec++;
+                else
+                    compteurEchec = 0;
+                
+                //actualise stopRobot
+                rt_mutex_acquire(&mutex_shr_stopRobot, TM_INFINITE);
+                stopRobot = shr_stopRobot;
+                rt_mutex_release(&mutex_shr_stopRobot);
+            }
+            //Stopping robot
+
+            //Stop WD
+            rt_event_clear(&event_WD, EVENT_SIGNALSTARTWD, null);
+
+            //consume event Stop
+            rt_mutex_acquire(&mutex_shr_stopRobot, TM_INFINITE);
+            shr_stopRobot = 0;
+            rt_mutex_release(&mutex_shr_stopRobot);
+
+            //if stopping on connection lost, send message
+            if (compteurEchec >= 3)
+                msg = new Message(MESSAGE_MONITOR_LOST);
+            
+        }
+        else//error when starting robot
+        {
+            WriteInQueue(&q_messageToMon, msg);
+        }
     }
+    
 
+    cout << "Movement answer: " << msgSend->ToString() << endl << flush;
+    WriteInQueue(&q_messageToMon, msgSend);  // msgSend will be deleted by sendToMon
+
+    if (msgSend->GetID() == MESSAGE_ANSWER_ACK) {
+        rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
+        robotStarted = 1;
+        rt_mutex_release(&mutex_robotStarted);
+    }
+    
+    
 }
 
 /**

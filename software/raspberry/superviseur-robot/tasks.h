@@ -104,7 +104,8 @@ private:
     RT_MUTEX mutex_robot;
     RT_MUTEX mutex_robotStarted;
     RT_MUTEX mutex_move;
-    RT_MUTEX mutex_shr_arena
+    RT_MUTEX mutex_shr_arena;
+    RT_MUTEX mutex_shr_stopRobot;
 
     /**********************************************************************/
     /* Semaphores                                                         */
@@ -114,7 +115,7 @@ private:
     RT_SEM sem_serverOk;
     RT_SEM sem_startRobot;
     RT_SEM sem_startCamera;
-    RT_SEM sem_findArena
+    RT_SEM sem_findArena;
 
     /**********************************************************************/
     /* Message queues                                                     */

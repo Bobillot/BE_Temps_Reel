@@ -153,7 +153,10 @@ void Tasks::Init() {
         cerr << "Error mutex create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
-    
+    if (err = rt_mutex_create(&mutex_shr_arena, NULL)) {
+        cerr << "Error mutex create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
     cout << "Mutexes created successfully" << endl << flush;
 
     /**************************************************************************************/
@@ -276,21 +279,20 @@ void Tasks::Run() {
         exit(EXIT_FAILURE);
     }
     if (err = rt_task_start(&th_batLevelUpdate, (void(*)(void*)) & Tasks::UpdateBatteryLevel, this)) {
-    cerr << "Error task start: " << strerror(-err) << endl << flush;
-    exit(EXIT_FAILURE);
+        cerr << "Error task start: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
     }
     if (err = rt_task_start(&th_calibration, (void(*)(void*)) & Tasks::Calibration, this)) {
-    cerr << "Error task start: " << strerror(-err) << endl << flush;
-    exit(EXIT_FAILURE);
+        cerr << "Error task start: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
     }
     if (err = rt_task_start(&th_comRobot, (void(*)(void*)) & Tasks::ThComRobot(), this)) {
-    cerr << "Error task start: " << strerror(-err) << endl << flush;
-    exit(EXIT_FAILURE);
+        cerr << "Error task start: " << strerror(-err) << endl << flush;
+       exit(EXIT_FAILURE);
     }
-    
     if (err = rt_task_start(&th_WD, (void(*)(void*)) & Tasks::ThWD(), this)) {
-    cerr << "Error task start: " << strerror(-err) << endl << flush;
-    exit(EXIT_FAILURE);
+       cerr << "Error task start: " << strerror(-err) << endl << flush;
+       exit(EXIT_FAILURE);
     }
     
     cout << "Tasks launched" << endl << flush;
@@ -824,10 +826,12 @@ void Tasks::ThWD()
     unsigned long WDEventFlag;
     while(1)
     {
-        rt_event_wait(&event_WD,MASK_WAITALL,&WDEventFlag,EVENT_MODE);
+        rt_event_wait(&event_WD,MASK_WAITALL,&WDEventFlag,EV_ALL);
         if (WDEventFlag == EVENT_SIGNALSTARTWD)
         {
+            rt_mutex_acquire(&mutex_robot, TM_INFINITE);
             robot.Write(new Message(MESSAGE_ROBOT_RELOAD_WD));
+            rt_mutex_release(&mutex_robot);
             rt_task_wait_period(NULL);
         }
     }

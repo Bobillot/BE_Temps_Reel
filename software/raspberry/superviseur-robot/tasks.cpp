@@ -140,6 +140,10 @@ void Tasks::Init() {
         cerr << "Error mutex create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
+    if (err = rt_mutex_create(&mutex_camera, NULL)) {
+        cerr << "Error mutex create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
     cout << "Mutexes created successfully" << endl << flush;
 
     /**************************************************************************************/
@@ -623,7 +627,7 @@ void Tasks::ThComRobot()
     unsigned long comRobotEventFlag;
     while  (1)
     {
-        rt_event_wait(&event_comRobot,MASK_WAITALL,&comRobotEventFlag,EVENT_MODE)   //:comRobot()?comRobotEventFlag;
+        rt_event_wait(&event_comRobot,MASK_WAITALL,&comRobotEventFlag,EVENT_MODE);   //:comRobot()?comRobotEventFlag;
         if (comRobotEventFlag == EVENT_COMROBOTSTART)            //1 <=> START
         {
             err = robot.Open();
@@ -655,3 +659,80 @@ void Tasks::ThComRobot()
     }
 }
 
+void Tasks::Gest_Img()
+{
+int err;
+bool sendImages;
+
+    while (1)
+    {
+        rt_sem_p(&sem_startCamera, TM_INFINITE);
+        rt_mutex_acquire(&mutex_camera, TM_INFINITE);
+        err = camera.Open();
+        rt_mutex_release(&mutex_camera);
+        if(err != -1) 
+        {
+            msg = new Message(MESSAGE_ANSWER_ACK);
+            WriteInQueue(&q_messageToMon,msg);
+
+            sendImages = true;
+
+            while (sendImages)
+            {
+                if(shr_stopCamera==0)
+                {
+                    rt_event_wait(&event_envoi,EVENT_ENVOIRESUME,null_ptr,EVENT_MODE)       //peut etre remplacer null_ptr par un unsigned long à définir dans Gest_Img()
+
+                    RTIME timeStart = rt_timer_read(); 
+
+                    int computePosLoc = shr_calculPosition;
+                    
+                    rt_mutex_acquire(&mutex_camera, TM_INFINITE);
+                    Img img = Camera.Grab();
+                    rt_mutex_release(&mutex_camera);
+
+                    if (computePosLoc==1)
+                    {
+                            std::list<Position> pos = Img::SearchRobot(shr_arena);
+                            if (pos.empty())
+                            {
+                                pos = (-1;-1)
+                                msg = MessagePosition(MESSAGE_CAM_POSITION,pos.front());
+                            }
+                            else
+                            {
+                                msg = MessagePosition(MESSAGE_CAM_POSITION,pos.front());
+                            }
+                            WriteInQueue(&q_messageToMon,msg);
+                    }
+                    WriteInQueue(&q_messageToMon,img);
+
+                    wait (100 - (rt_timer_read() - timeStart);
+                }
+                else
+                {
+                    shr_stopCamera = 0;
+                    rt_mutex_acquire(&mutex_camera, TM_INFINITE);
+                    err = camera.Close();
+                    rt_mutex_release(&mutex_camera);
+                    if(err!=-1)
+                    {
+                        sendImages = false;
+                        msg = new Message(MESSAGE_ANSWER_ACK);
+                    }
+                    else
+                    {
+                        msg = new Message(MESSAGE_ANSWER_NACK);
+                    }
+                    WriteInQueue(&q_messageToMon,msg);
+                }
+            }   
+        }
+        else
+        {
+
+            msg = new Message(MESSAGE_ANSWER_ACK);
+            WriteInQueue(&q_messageToMon,msg);
+        }
+    }
+}

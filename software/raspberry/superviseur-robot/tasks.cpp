@@ -221,6 +221,11 @@ void Tasks::Init() {
         exit(EXIT_FAILURE);
     }              
     
+    if (err = rt_task_create(&th_WD, "th_WD", 0, PRIORITY_TBAT, 0)) {
+        cerr << "Error task create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    
     cout << "Tasks created successfully" << endl << flush;
 
     /**************************************************************************************/
@@ -277,6 +282,12 @@ void Tasks::Run() {
     cerr << "Error task start: " << strerror(-err) << endl << flush;
     exit(EXIT_FAILURE);
     }
+    
+    if (err = rt_task_start(&th_WD, (void(*)(void*)) & Tasks::ThWD(), this)) {
+    cerr << "Error task start: " << strerror(-err) << endl << flush;
+    exit(EXIT_FAILURE);
+    }
+    
     cout << "Tasks launched" << endl << flush;
 }
 
@@ -722,6 +733,21 @@ void Tasks::ThComRobot()
             }
         }
     WriteInQueue(&q_messageToMon,msgSend);
+    }
+}
+
+
+void Tasks::ThWD()
+{
+    unsigned long WDEventFlag;
+    while(1)
+    {
+        rt_event_wait(&event_WD,MASK_WAITALL,&WDEventFlag,EVENT_MODE);
+        if (WDEventFlag == EVENT_SIGNALSTARTWD)
+        {
+            robot.Write(new Message(MESSAGE_ROBOT_RELOAD_WD));
+            rt_task_wait_period(NULL);
+        }
     }
 }
 

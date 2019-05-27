@@ -96,6 +96,7 @@ private:
     RT_TASK th_move;
     RT_TASK th_batLevelUpdate;
     RT_TASK th_calibration;
+    RT_TASK th_WD;
     
     /**********************************************************************/
     /* Mutex                                                              */
@@ -164,6 +165,8 @@ private:
     void ThComRobot():
     
     void Gest_Img();
+    
+    void ThWD();
     
     /**********************************************************************/
     /* Queue services                                                     */

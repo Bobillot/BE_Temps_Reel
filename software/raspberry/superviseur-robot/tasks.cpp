@@ -664,46 +664,46 @@ void Tasks::Calibration(void *arg) {
     Arena arena;
     Messages msg;
     MessageImg msgImg;
-    
-    rt_event_wait(event_findArena,MASK_WAITALL,&mask_find_arena,EV_ALL); //EV_ANY (OR), EV_ALL (AND)
-    if(mask_find_arena == EVENT_FINDARENNA){
-        
-        if(debug) cout << "[Thread CALIBRATION] Event flag FindArena received";
-        rt_event_clear(event_envoi,MASK_WAITALL,NULL); //Clear all events
-        if(debug) cout << "[Thread CALIBRATION] Sending ENVOISTOP event flag to camera";
-        image = camera.Grab();
-        if(debug) cout << "[Thread CALIBRATION] Capture image";
-        arena = image.SearchArena();
-        if(debug) cout << "[Thread CALIBRATION] Search Arena on the captured image";
-        if(arena.IsEmpty() == true) { //true = no arena found
-            msg = new Messages(MESSAGE_ANSWER_NACK);
-            if(debug) cout << "[Thread CALIBRATION] NO ARENA FOUND ! Sending message...";
-            WriteInQueue(&q_messageToMon,msg);
-        } else {
-            if(debug) cout << "[Thread CALIBRATION] Arena Found";
-            image.DrawArena(arena);
-            msgImg = MessageImg(MESSAGE_CAM_IMAGE,&image);
-            if(debug) cout << "[Thread CALIBRATION] Sending arena-image to monitor";
-            WriteInQueue(&q_messageToMon,msgImg);
-            if(debug) cout << "[Thread CALIBRATION] Waiting for confirmation from monitor...";
-            rt_event_wait(event_arenaValid,MASK_WAITALL,&arena_confirmation,EV_ALL);
-            if(arena_confirmation == EVENT_ARENAOK){
-                if(debug) cout << "[Thread CALIBRATION] Arena is OK";
-                rt_mutex_acquire(&mutex_shr_arena, TM_INFINITE);
-                shr_arena = arena;
-                rt_mutex_release(&mutex_shr_arena);
-                
-            }else {
-                if(debug) cout << "[Thread CALIBRATION] Arena is not OK";
-                rt_mutex_acquire(&mutex_shr_arena, TM_INFINITE);
-                shr_arena = NULL;
-                rt_mutex_release(&mutex_shr_arena);
+    while (1) {
+        rt_event_wait(event_findArena,MASK_WAITALL,&mask_find_arena,EV_ALL); //EV_ANY (OR), EV_ALL (AND)
+        if(mask_find_arena == EVENT_FINDARENNA){
+
+            if(debug) cout << "[Thread CALIBRATION] Event flag FindArena received";
+            rt_event_clear(event_envoi,MASK_WAITALL,NULL); //Clear all events
+            if(debug) cout << "[Thread CALIBRATION] Sending ENVOISTOP event flag to camera";
+            image = camera.Grab();
+            if(debug) cout << "[Thread CALIBRATION] Capture image";
+            arena = image.SearchArena();
+            if(debug) cout << "[Thread CALIBRATION] Search Arena on the captured image";
+            if(arena.IsEmpty() == true) { //true = no arena found
+                msg = new Messages(MESSAGE_ANSWER_NACK);
+                if(debug) cout << "[Thread CALIBRATION] NO ARENA FOUND ! Sending message...";
+                WriteInQueue(&q_messageToMon,msg);
+            } else {
+                if(debug) cout << "[Thread CALIBRATION] Arena Found";
+                image.DrawArena(arena);
+                msgImg = MessageImg(MESSAGE_CAM_IMAGE,&image);
+                if(debug) cout << "[Thread CALIBRATION] Sending arena-image to monitor";
+                WriteInQueue(&q_messageToMon,msgImg);
+                if(debug) cout << "[Thread CALIBRATION] Waiting for confirmation from monitor...";
+                rt_event_wait(event_arenaValid,MASK_WAITALL,&arena_confirmation,EV_ALL);
+                if(arena_confirmation == EVENT_ARENAOK){
+                    if(debug) cout << "[Thread CALIBRATION] Arena is OK";
+                    rt_mutex_acquire(&mutex_shr_arena, TM_INFINITE);
+                    shr_arena = arena;
+                    rt_mutex_release(&mutex_shr_arena);
+
+                }else {
+                    if(debug) cout << "[Thread CALIBRATION] Arena is not OK";
+                    rt_mutex_acquire(&mutex_shr_arena, TM_INFINITE);
+                    shr_arena = NULL;
+                    rt_mutex_release(&mutex_shr_arena);
+                }
             }
+            if(debug) cout << "[Thread CALIBRATION] Sending event flag ENVOIRESUME to camera...";
+            rt_event_signal(event_envoi,EVENT_ENVOIRESUME);
         }
-        if(debug) cout << "[Thread CALIBRATION] Sending event flag ENVOIRESUME to camera...";
-        rt_event_signal(event_envoi,EVENT_ENVOIRESUME);
     }
-      
 }
 
 void Tasks::ThComRobot()

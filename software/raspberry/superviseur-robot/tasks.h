@@ -27,6 +27,7 @@
 #include <alchemy/mutex.h>
 #include <alchemy/sem.h>
 #include <alchemy/queue.h>
+#include <alchemy/event.h>
 
 #include "messages.h"
 #include "commonitor.h"
@@ -83,7 +84,7 @@ private:
     int shr_stopRobot = 0;
     int shr_calculPosition = 0; // START => 1 STOP => 0
     int shr_stopCamera = 0;
-    Arena shr_arena;
+    Arena * shr_arena;
     
     /**********************************************************************/
     /* Tasks                                                              */
@@ -163,11 +164,11 @@ private:
      */
     void Calibration(void *arg);
     
-    void ThComRobot():
-    
     void Gest_Img();
     
     void ThWD();
+    
+    void receiveFromMon();
     
     /**********************************************************************/
     /* Queue services                                                     */

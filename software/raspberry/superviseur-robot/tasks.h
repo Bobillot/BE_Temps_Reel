@@ -81,7 +81,7 @@ private:
     int robotStarted = 0;
     int move = MESSAGE_ROBOT_STOP;
     int shr_stopRobot = 0;
-    int shr_calculPosition = 0;
+    int shr_calculPosition = 0; // START => 1 STOP => 0
     int shr_stopCamera = 0;
     Arena shr_arena;
     
@@ -96,6 +96,7 @@ private:
     RT_TASK th_move;
     RT_TASK th_batLevelUpdate;
     RT_TASK th_calibration;
+    RT_TASK th_WD;
     
     /**********************************************************************/
     /* Mutex                                                              */
@@ -104,6 +105,7 @@ private:
     RT_MUTEX mutex_robot;
     RT_MUTEX mutex_robotStarted;
     RT_MUTEX mutex_move;
+    RT_MUTEX mutex_shr_arena
 
     /**********************************************************************/
     /* Semaphores                                                         */
@@ -163,6 +165,8 @@ private:
     void ThComRobot():
     
     void Gest_Img();
+    
+    void ThWD();
     
     /**********************************************************************/
     /* Queue services                                                     */

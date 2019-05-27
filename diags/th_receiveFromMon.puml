@@ -39,7 +39,7 @@ while ()
                             if(msgRcv.compareID(MESSAGE_ROBOT_CAM_OPEN)) then (true)
                                 :startCamera!;
                             else  (false)
-                                if(msgRcv.compareID(MESSAGE_ROBOT_CAM_OPEN)) then (true)
+                                if(msgRcv.compareID(MESSAGE_ROBOT_CAM_STOP)) then (true)
                                     :stopCamera = true;
                                 else  (false)
                                     if(msgRcv.compareID(MESSAGE_ROBOT_CAM_ASK_ARENA)) then (true)

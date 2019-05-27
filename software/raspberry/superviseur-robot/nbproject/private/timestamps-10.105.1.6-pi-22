@@ -1,9 +1,9 @@
-#Mon May 27 10:33:32 CEST 2019
+#Mon May 27 11:28:29 CEST 2019
 /home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/commonitor.cpp=c1558596013000
 /home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/gdbsudo.sh=c1555482494000
 /home/bobillot/Bureau/Temps_Reel/dumber/software/raspberry/superviseur-robot/main.cpp=c1555482494000
 /home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/messages.cpp=c1558596013000
-/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/tasks.h=c1558945728000
+/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/tasks.h=c1558946300000
 /home/bobillot/Bureau/Temps_Reel/dumber/software/raspberry/superviseur-robot/lib/camera.h=c1555482494000
 /home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/nbproject/Makefile-Debug__PC_.mk=c1555482494000
 /home/bobillot/Bureau/Temps_Reel/dumber/software/raspberry/superviseur-robot/lib/messages.h=c1555482494000
@@ -16,7 +16,7 @@
 /home/bobillot/Bureau/Temps_Reel/dumber/software/raspberry/superviseur-robot/Makefile=c1555482493000
 /home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/lib/camera.cpp=c1555482494000
 /home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/lib/base64/.gitignore=c1555482494000
-/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/tasks.cpp=c1558946008000
+/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/tasks.cpp=c1558949306000
 /home/bobillot/Bureau/Temps_Reel/dumber/software/raspberry/superviseur-robot/lib/comrobot.h=c1555482494000
 /home/bobillot/Bureau/Temps_Reel/dumber/software/raspberry/superviseur-robot/lib/base64/base64.h=c1555482494000
 /home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/camera.h=c1558596013000
@@ -76,11 +76,11 @@
 /home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/nbproject/project.properties=c1558596013000
 VERSION=1.3
 /home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/tasks.h=c1555484844000
-/home/bobillot/Bureau/Temps_Reel/dumber/software/raspberry/superviseur-robot/lib/camera.cpp=c1555482494000
-/home/bobillot/Bureau/Temps_Reel/dumber/software/raspberry/superviseur-robot/lib/commonitor.h=c1555482494000
 /home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/nbproject/Makefile-variables.mk=c1555482494000
-/home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/lib/comrobot.h=c1555482494000
+/home/bobillot/Bureau/Temps_Reel/dumber/software/raspberry/superviseur-robot/lib/commonitor.h=c1555482494000
+/home/bobillot/Bureau/Temps_Reel/dumber/software/raspberry/superviseur-robot/lib/camera.cpp=c1555482494000
 /home/bobillot/Bureau/Temps_Reel/dumber/software/raspberry/superviseur-robot/nbproject/project.xml=c1555482494000
+/home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/lib/comrobot.h=c1555482494000
 /home/bobillot/Bureau/Temps_Reel/dumber/software/raspberry/superviseur-robot/nbproject/Makefile-impl.mk=c1555482494000
 /home/bobillot/Bureau/Temps_Reel/dumber/software/raspberry/superviseur-robot/lib/img.h=c1555482494000
 /home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/comrobot.cpp=c1558596013000
@@ -94,17 +94,17 @@ VERSION=1.3
 /home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/lib/base64/base64.cpp=c1555482494000
 /home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/README.md=c1555482493000
 /home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/nbproject/Makefile-Debug__PC_.mk=c1558596013000
-/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/camera.cpp=c1558596013000
 /home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/Makefile=c1558596013000
+/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/camera.cpp=c1558596013000
 /home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/lib/base64/test.cpp=c1555482494000
 /home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/img.cpp=c1558596013000
-/home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/lib/.gitignore=c1555482494000
 /home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/README.md=c1558596013000
-/home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/nbproject/Makefile-Debug__RPI_.mk=c1555482494000
+/home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/lib/.gitignore=c1555482494000
 /home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/base64/base64.cpp=c1558596013000
+/home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/nbproject/Makefile-Debug__RPI_.mk=c1555482494000
 /home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/tasks.cpp=c1555484844000
 /home/bobillot/Bureau/Temps_Reel/dumber/software/raspberry/superviseur-robot/nbproject/private/Makefile-variables.mk=c1555482494000
 /home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/nbproject/Package-Debug__PC_.bash=c1555482494000
-/home/bobillot/Bureau/Temps_Reel/dumber/software/raspberry/superviseur-robot/lib/base64/LICENSE=c1555482494000
 /home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/img.h=c1558596013000
+/home/bobillot/Bureau/Temps_Reel/dumber/software/raspberry/superviseur-robot/lib/base64/LICENSE=c1555482494000
 /home/bobillot/Bureau/Temps\ R\u00E9el/dumber/software/raspberry/superviseur-robot/lib/base64/LICENSE=c1555482494000

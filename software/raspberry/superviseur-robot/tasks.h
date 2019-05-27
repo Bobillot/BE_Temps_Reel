@@ -108,6 +108,7 @@ private:
     RT_MUTEX mutex_move;
     RT_MUTEX mutex_shr_arena;
     RT_MUTEX mutex_shr_stopRobot;
+    RT_MUTEX mutex_camera;
 
     /**********************************************************************/
     /* Semaphores                                                         */

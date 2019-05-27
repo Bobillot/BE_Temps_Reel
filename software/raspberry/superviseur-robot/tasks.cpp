@@ -157,6 +157,10 @@ void Tasks::Init() {
         cerr << "Error mutex create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
+    if (err = rt_mutex_create(&mutex_camera, NULL)) {
+        cerr << "Error mutex create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
     if (err = rt_mutex_create(&mutex_shr_arena, NULL)) {
         cerr << "Error mutex create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
@@ -452,10 +456,10 @@ void Tasks::OpenComRobot(void *arg) {
         if (comRobotEventFlag == EVENT_COMROBOTSTART)            //1 <=> START
         {
             err = robot.Open();
-            if (err != -1) 
+            if (err >= 0) 
             {
                 msgSend = new Message(MESSAGE_ANSWER_ACK);
-                rt_event_signal(&event_comRobot,EVENT_COMROBOTISSTARTED);   //:comRobotStartEvent!START; 
+                rt_event_signal(&event_comRobotStartEvent,EVENT_COMROBOTISSTARTED);   //:comRobotStartEvent!START; 
             }
             else
             {
@@ -464,7 +468,7 @@ void Tasks::OpenComRobot(void *arg) {
         }
         else
         {
-            rt_event_signal(&event_comRobotStartEvent,EVENT_INIT); //:comRobotStartEvent!STOP;  
+            rt_event_clear(&event_comRobotStartEvent,MASK_WAITALL,NULL); //:comRobotStartEvent!STOP;  
             if (comRobotEventFlag == EVENT_COMROBOTLOST)   //2<=>LOST 
             {
                 msgSend = new Message(MESSAGE_MONITOR_LOST);
@@ -479,7 +483,9 @@ void Tasks::OpenComRobot(void *arg) {
                 msgSend = new Message(MESSAGE_ROBOT_COM_CLOSE);
             }
         }
-    WriteInQueue(&q_messageToMon,msgSend);
+        rt_event_clear(&event_comRobot,MASK_WAITALL,NULL);
+        //check somewhere here
+        WriteInQueue(&q_messageToMon,msgSend);
     }
 }
 
@@ -538,11 +544,14 @@ void Tasks::MoveTask(void *arg) {
         //wait for communication started
         compteurEchec = 0;
         eventReturn = 0;
+        cout << "wait for open com robot event" << endl;
         rt_event_wait(&event_comRobotStartEvent, EVENT_COMROBOTISSTARTED, &eventReturn, EV_ANY, TM_INFINITE);
         //wait for start robot signal
-        rt_event_wait(&event_startRobot, EVENT_STARTWD | EVENT_STARTWD, &eventReturn, EV_ANY, TM_INFINITE);
-        rt_event_clear(&event_startRobot, EVENT_STARTWD | EVENT_STARTWD, NULL);
-
+        cout << "Recvd open com event" << endl;
+        rt_event_wait(&event_startRobot, MASK_WAITALL, &eventReturn, EV_ANY, TM_INFINITE);
+        
+        cout << "Recvd start robot event" << eventReturn << endl;
+        rt_event_clear(&event_startRobot, MASK_WAITALL, NULL);
         Message * msg;
         if (eventReturn == EVENT_STARTWD)
         {
@@ -619,6 +628,10 @@ void Tasks::MoveTask(void *arg) {
             rt_mutex_acquire(&mutex_shr_stopRobot, TM_INFINITE);
             shr_stopRobot = 0;
             rt_mutex_release(&mutex_shr_stopRobot);
+            
+            rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
+            robotStarted = 0;
+            rt_mutex_release(&mutex_robotStarted);
 
             //if stopping on connection lost, send message
             if (compteurEchec >= 3)
@@ -675,6 +688,7 @@ void Tasks::UpdateBatteryLevel()
     
      while (1) 
      {
+         rt_event_wait(&event_comRobotStartEvent, EVENT_COMROBOTISSTARTED, NULL, EV_ANY, TM_INFINITE);
         rt_task_wait_period(NULL);
         cout << "Periodic Battery Level update";
         rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
@@ -718,11 +732,13 @@ void Tasks::receiveFromMon()
                 rt_event_signal(&event_comRobot, EVENT_COMROBOTSTOP);
                 break; 
             case (MESSAGE_ROBOT_START_WITH_WD):
+                cout << "received start with WD" << endl;
                 //startRobot!WD
                 rt_event_signal(&event_startRobot, EVENT_STARTWD); 
                 break; 
             case (MESSAGE_ROBOT_START_WITHOUT_WD): 
                 //startRobot!NOWD
+                cout << "received start without WD" << endl;
                 rt_event_signal(&event_startRobot, EVENT_STARTNOWD);
                 break; 
             case (MESSAGE_ROBOT_STOP): 
@@ -806,11 +822,91 @@ void Tasks::Calibration(void *arg) {
                 shr_arena = NULL;
                 rt_mutex_release(&mutex_shr_arena);
             }
-        }
         if(debugTP) cout << "[Thread CALIBRATION] Sending event flag ENVOIRESUME to camera...";
         rt_event_signal(&event_envoi,EVENT_ENVOIRESUME);
+        }
     }
-      
+}
+
+void Tasks::Gest_Img()
+{
+int err;
+bool sendImages;
+unsigned int * retEvent;
+Message * msg;
+
+    while (1)
+    {
+        rt_sem_p(&sem_startCamera, TM_INFINITE);
+        rt_mutex_acquire(&mutex_camera, TM_INFINITE);
+        err = camera.Open();
+        rt_mutex_release(&mutex_camera);
+        if(err != -1) 
+        {
+            msg = new Message(MESSAGE_ANSWER_ACK);
+            WriteInQueue(&q_messageToMon,msg);
+
+            sendImages = true;
+
+            while (sendImages)
+            {
+                if(shr_stopCamera==0)
+                {
+                    rt_event_wait(&event_envoi,EVENT_ENVOIRESUME,retEvent,EV_ALL,TM_INFINITE);       //peut etre remplacer null_ptr par un unsigned long à définir dans Gest_Img()
+
+                    RTIME timeStart = rt_timer_read(); 
+
+                    int computePosLoc = shr_calculPosition;
+                    
+                    rt_mutex_acquire(&mutex_camera, TM_INFINITE);
+                    Img img = camera.Grab();
+                    rt_mutex_release(&mutex_camera);
+
+                    if (computePosLoc==1)
+                    {
+                            std::list<Position> pos(img.SearchRobot(*shr_arena));
+                            if (pos.empty())
+                            {
+                                pos.back() = *(new Position()); //fuite de mem ?
+                                msg = new MessagePosition(MESSAGE_CAM_POSITION,pos.front());
+                            }
+                            else
+                            {
+                                msg = new MessagePosition(MESSAGE_CAM_POSITION,pos.front());
+                            }
+                            WriteInQueue(&q_messageToMon,msg);
+                    }
+                    WriteInQueue(&q_messageToMon,new MessageImg(MESSAGE_CAM_IMAGE, &img));
+
+                    rt_task_sleep(rt_timer_ns2ticks(100000) - (rt_timer_read() - timeStart));
+                }
+                else
+                {
+                    shr_stopCamera = 0;
+                    rt_mutex_acquire(&mutex_camera, TM_INFINITE);
+                    camera.Close();
+                    rt_mutex_release(&mutex_camera);
+//                    if(err!=-1)
+//                    {
+//                        sendImages = false;
+//                        msg = new Message(MESSAGE_ANSWER_ACK);
+//                    }
+//                    else
+//                    {
+//                        msg = new Message(MESSAGE_ANSWER_NACK);
+//                    }
+                     msg = new Message(MESSAGE_ANSWER_ACK);
+                    WriteInQueue(&q_messageToMon,msg);
+                }
+            }   
+        }
+        else
+        {
+
+            msg = new Message(MESSAGE_ANSWER_ACK);
+            WriteInQueue(&q_messageToMon,msg);
+        }
+    }
 }
 
 
@@ -829,4 +925,5 @@ void Tasks::ThWD()
         }
     }
 }
+
 

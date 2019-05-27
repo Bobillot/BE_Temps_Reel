@@ -149,7 +149,12 @@ void Tasks::Init() {
         cerr << "Error mutex create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
+
     if (err = rt_mutex_create(&mutex_camera, NULL)) {
+        cerr << "Error mutex create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    if (err = rt_mutex_create(&mutex_shr_arena, NULL)) {
         cerr << "Error mutex create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
@@ -275,21 +280,20 @@ void Tasks::Run() {
         exit(EXIT_FAILURE);
     }
     if (err = rt_task_start(&th_batLevelUpdate, (void(*)(void*)) & Tasks::UpdateBatteryLevel, this)) {
-    cerr << "Error task start: " << strerror(-err) << endl << flush;
-    exit(EXIT_FAILURE);
+        cerr << "Error task start: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
     }
     if (err = rt_task_start(&th_calibration, (void(*)(void*)) & Tasks::Calibration, this)) {
-    cerr << "Error task start: " << strerror(-err) << endl << flush;
-    exit(EXIT_FAILURE);
+        cerr << "Error task start: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
     }
     if (err = rt_task_start(&th_comRobot, (void(*)(void*)) & Tasks::ThComRobot(), this)) {
-    cerr << "Error task start: " << strerror(-err) << endl << flush;
-    exit(EXIT_FAILURE);
+        cerr << "Error task start: " << strerror(-err) << endl << flush;
+       exit(EXIT_FAILURE);
     }
-    
     if (err = rt_task_start(&th_WD, (void(*)(void*)) & Tasks::ThWD(), this)) {
-    cerr << "Error task start: " << strerror(-err) << endl << flush;
-    exit(EXIT_FAILURE);
+       cerr << "Error task start: " << strerror(-err) << endl << flush;
+       exit(EXIT_FAILURE);
     }
     
     cout << "Tasks launched" << endl << flush;
@@ -740,7 +744,7 @@ void Tasks::ThComRobot()
     }
 }
 
-<<<<<<< HEAD
+
 void Tasks::Gest_Img()
 {
 int err;
@@ -818,7 +822,7 @@ bool sendImages;
         }
     }
 }
-=======
+
 
 void Tasks::ThWD()
 {
@@ -836,4 +840,4 @@ void Tasks::ThWD()
     }
 }
 
->>>>>>> 8ac9933f3a977b337da2d439b736e39129f24879
+

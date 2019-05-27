@@ -221,7 +221,7 @@ void Tasks::Init() {
         exit(EXIT_FAILURE);
     }              
     
-    if (err = rt_task_create(&th_WD, "th_WD", 0, PRIORITY_TBAT, 0)) {
+    if (err = rt_task_create(&th_WD, "th_WD", 0, PRIORITY_TWD, 0)) {
         cerr << "Error task create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }

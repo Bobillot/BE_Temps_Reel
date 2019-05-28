@@ -97,6 +97,7 @@ private:
     RT_TASK th_move;
     RT_TASK th_batLevelUpdate;
     RT_TASK th_calibration;
+    RT_TASK th_gestImage;
     RT_TASK th_WD;
     
     /**********************************************************************/

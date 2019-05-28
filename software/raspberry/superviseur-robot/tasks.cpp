@@ -133,7 +133,7 @@ void Tasks::Init() {
     }
     if (err = rt_event_create(&event_envoi,
             "cameraSendingEvents",
-            EVENT_INIT,
+            EVENT_ENVOIRESUME,
             EVENT_MODE)) {
         cerr << "Error event create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
@@ -248,7 +248,11 @@ void Tasks::Init() {
         cerr << "Error task create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
-
+    
+    if (err = rt_task_create(&th_gestImage, "th_gestImage", 0, PRIORITY_TGESTIMAGE, 0)) {
+        cerr << "Error task create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
     cout << "Tasks created successfully" << endl << flush;
 
     /**************************************************************************************/
@@ -306,6 +310,11 @@ void Tasks::Run() {
     //       exit(EXIT_FAILURE);
     //    }
     if (err = rt_task_start(&th_WD, (void(*)(void*)) & Tasks::ThWD, this)) {
+        cerr << "Error task start: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
+    
+     if (err = rt_task_start(&th_gestImage, (void(*)(void*)) & Tasks::Gest_Img, this)) {
         cerr << "Error task start: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
@@ -461,6 +470,8 @@ void Tasks::OpenComRobot(void *arg) {
         rt_event_wait(&event_comRobot, MASK_WAITALL, &comRobotEventFlag, EV_ANY, TM_INFINITE); //:comRobot()?comRobotEventFlag;
         if (comRobotEventFlag == EVENT_COMROBOTSTART) //1 <=> START
         {
+             if (debugTP)
+                    cout << "Com robot start" << endl;
             rt_mutex_acquire(&mutex_robot, TM_INFINITE);
             err = robot.Open();
             rt_mutex_release(&mutex_robot);
@@ -478,17 +489,39 @@ void Tasks::OpenComRobot(void *arg) {
             {
                 if (debugTP)
                     cout << "Com robot lost" << endl;
-                msgSend = new Message(MESSAGE_ANSWER_COM_ERROR); //SI OK : ERREUR DANS LA DOC
+                rt_mutex_acquire(&mutex_robot, TM_INFINITE);
+                    err = robot.Close();
+                rt_mutex_release(&mutex_robot);
+                msgSend = new Message(MESSAGE_ANSWER_ROBOT_TIMEOUT); //ERREUR DANS LA DOC
+
+                err = -1;
+                while (err < 0) {
+                    //restart connection 
+                    rt_mutex_acquire(&mutex_robot, TM_INFINITE);
+                    if (debugTP)                 
+                    err = robot.Open();
+                    cout << err << endl;
+                    rt_mutex_release(&mutex_robot);
+                    cout << "end of loop" << endl;
+                }
+                if (debugTP)
+                    cout << "Com robot reopen" << endl;
+                rt_event_signal(&event_comRobot,EVENT_COMROBOTISSTARTED); //mod conception
+
             } else if (comRobotEventFlag == EVENT_COMROBOTSTOP) //3<=>STOP
             {
                 //send stop robot event
                 rt_mutex_acquire(&mutex_shr_stopRobot, TM_INFINITE);
                 shr_stopRobot = 1;
                 rt_mutex_release(&mutex_shr_stopRobot);
-                robot.Close();
+                
                 msgSend = new Message(MESSAGE_ROBOT_COM_CLOSE);
+                //Mod conception
+                 cout << "stopped com" << endl;
+            rt_event_clear(&event_comRobotStartEvent, MASK_WAITALL, NULL);
             }
-            cout << "stopped com" << endl;
+            
+           
         }
         rt_event_clear(&event_comRobot, MASK_WAITALL, NULL);
         //check somewhere here
@@ -624,7 +657,7 @@ void Tasks::MoveTask(void *arg) {
             //Stopping robot
 
             //Stop WD
-            rt_event_clear(&event_WD, EVENT_SIGNALSTARTWD, NULL);
+            rt_event_clear(&event_WD, MASK_WAITALL, NULL);
 
             //consume event Stop
             rt_mutex_acquire(&mutex_shr_stopRobot, TM_INFINITE);
@@ -640,8 +673,11 @@ void Tasks::MoveTask(void *arg) {
             rt_mutex_release(&mutex_robot);
 
             //if stopping on connection lost, send message
-            if (compteurEchec >= 3)
+            if (compteurEchec >= 3) {
                 rt_event_signal(&event_comRobot, EVENT_COMROBOTLOST);
+                //So that it blocks quickly enough
+                rt_event_clear(&event_comRobotStartEvent, MASK_WAITALL, NULL);
+            }
 
         } else//error when starting robot
         {
@@ -696,11 +732,15 @@ void Tasks::UpdateBatteryLevel() {
     while (1) {
         rt_event_wait(&event_comRobotStartEvent, EVENT_COMROBOTISSTARTED, &retEvent, EV_ANY, TM_INFINITE);
         rt_task_wait_period(NULL);
-        //cout << "Periodic Battery Level update";
         rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
         rs = robotStarted;
         rt_mutex_release(&mutex_robotStarted);
         if (rs == 1) {
+          
+//                    msgAnswer = new Message(MESSAGE_ANSWER_ROBOT_TIMEOUT);
+//
+//                    msgAnswer = new Message(MESSAGE_ANSWER_COM_ERROR);
+            //TODO check message type to avoid duplicate TO
             rt_mutex_acquire(&mutex_robot, TM_INFINITE);
             level = (MessageBattery*) robot.Write(ComRobot::GetBattery());
             rt_mutex_release(&mutex_robot);
@@ -719,12 +759,13 @@ void Tasks::receiveFromMon() {
     cout << "started to receive from mon" << endl;
     while (1) {
 
-        //devrait y avoir unmutex, mais bloque (cf code origine)
+        //devrait y avoir un mutex, mais bloque (cf code origine)
         msgRcv = monitor.Read();
 
         switch (msgRcv->GetID()) {
             case (MESSAGE_MONITOR_LOST):
-                return;
+                delete msgRcv;
+                exit(10);
             case (MESSAGE_ROBOT_COM_OPEN):
                 //comRobot!START
                 rt_event_signal(&event_comRobot, EVENT_COMROBOTSTART);
@@ -749,7 +790,8 @@ void Tasks::receiveFromMon() {
                 break;
             case (MESSAGE_CAM_OPEN):
                 //startCamera!
-                rt_sem_p(&sem_startCamera, TM_INFINITE);
+                if (debugTP) cout << "cam open msg" << endl;
+                rt_sem_broadcast(&sem_startCamera);
                 break;
             case (MESSAGE_CAM_CLOSE):
                 //lack mutex
@@ -757,7 +799,7 @@ void Tasks::receiveFromMon() {
                 break;
             case (MESSAGE_CAM_ASK_ARENA):
                 //findArena!
-                rt_sem_p(&sem_findArena, TM_INFINITE);
+                rt_sem_broadcast(&sem_findArena);
                 break;
             case (MESSAGE_CAM_ARENA_CONFIRM):
                 //arenaValid!OK
@@ -852,6 +894,7 @@ void Tasks::Gest_Img() {
 
     while (1) {
         rt_sem_p(&sem_startCamera, TM_INFINITE);
+        cout << "cam opening" << endl;
         rt_mutex_acquire(&mutex_camera, TM_INFINITE);
         err = camera.Open();
         rt_mutex_release(&mutex_camera);
@@ -864,7 +907,7 @@ void Tasks::Gest_Img() {
 
             while (sendImages) {
                 if (shr_stopCamera == 0) {
-                    rt_event_wait(&event_envoi, EVENT_ENVOIRESUME, retEvent, EV_ALL, TM_INFINITE); //peut etre remplacer null_ptr par un unsigned long à définir dans Gest_Img()
+                    rt_event_wait(&event_envoi, EVENT_ENVOIRESUME, retEvent, EV_ANY, TM_INFINITE); //peut etre remplacer null_ptr par un unsigned long à définir dans Gest_Img()
 
                     RTIME timeStart = rt_timer_read();
 

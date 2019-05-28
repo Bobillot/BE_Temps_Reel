@@ -468,8 +468,6 @@ void Tasks::OpenComRobot(void *arg) {
             rt_mutex_release(&mutex_robot);
             if (err >= 0) 
             {
-                if(debugTP)
-                    cout << "Com open ok" << endl;
                 msgSend = new Message(MESSAGE_ANSWER_ACK);
                 rt_event_signal(&event_comRobotStartEvent,EVENT_COMROBOTISSTARTED);   //:comRobotStartEvent!START; 
             }
@@ -502,7 +500,7 @@ void Tasks::OpenComRobot(void *arg) {
         }
         rt_event_clear(&event_comRobot,MASK_WAITALL,NULL);
         //check somewhere here
-        WriteInQueue(&q_messageToMon,msgSend);l;
+        WriteInQueue(&q_messageToMon,msgSend);
     }
 }
 
@@ -560,10 +558,8 @@ void Tasks::MoveTask(void *arg) {
         //wait for communication started
         compteurEchec = 0;
         eventReturn = 0;
-        cout << "wait for open com robot event" << endl;
         rt_event_wait(&event_comRobotStartEvent, MASK_WAITALL, &eventReturn, EV_ALL, TM_INFINITE);
         //wait for start robot signal
-        cout << "Recvd open com event" << endl;
         rt_event_wait(&event_startRobot, MASK_WAITALL, &eventReturn, EV_ANY, TM_INFINITE);
         
         cout << "Recvd start robot event" << eventReturn << endl;
@@ -584,7 +580,6 @@ void Tasks::MoveTask(void *arg) {
         }
         else
         {
-            cout << "coco"<< endl;
            exit(EXIT_FAILURE);
         }
             
@@ -708,7 +703,6 @@ void Tasks::UpdateBatteryLevel()
     MessageBattery *level;
     
     rt_task_set_periodic(NULL, TM_NOW, 500000000);
-    pause();
      while (1) 
      {
         rt_event_wait(&event_comRobotStartEvent, EVENT_COMROBOTISSTARTED, &retEvent, EV_ANY, TM_INFINITE);
@@ -740,17 +734,16 @@ void Tasks::receiveFromMon()
     cout << "started to receive from mon" << endl;
     while(1) 
     {
-        rt_mutex_acquire(&mutex_monitor, TM_INFINITE);
+        
+        //devrait y avoir unmutex, mais bloque (cf code origine)
         msgRcv = monitor.Read() ; 
-        rt_mutex_release(&mutex_monitor);
-    
+        
         switch (msgRcv->GetID()) 
         {
             case (MESSAGE_MONITOR_LOST): 
                 return; 
             case (MESSAGE_ROBOT_COM_OPEN): 
                 //comRobot!START
-                cout << "received robot com open" << endl;
                 rt_event_signal(&event_comRobot, EVENT_COMROBOTSTART);
                 break; 
             case (MESSAGE_ROBOT_COM_CLOSE): 
@@ -758,7 +751,6 @@ void Tasks::receiveFromMon()
                 rt_event_signal(&event_comRobot, EVENT_COMROBOTSTOP);
                 break; 
             case (MESSAGE_ROBOT_START_WITH_WD):
-                cout << "received start with WD" << endl;
                 //startRobot!WD
                 rt_event_signal(&event_startRobot, EVENT_STARTWD); 
                 break; 
@@ -802,6 +794,7 @@ void Tasks::receiveFromMon()
                 move = msgRcv->GetID() ; 
                 break; 
         }
+        delete msgRcv;
     }
 }
 

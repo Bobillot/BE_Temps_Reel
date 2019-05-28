@@ -376,7 +376,7 @@ void Tasks::SendToMonTask(void* arg) {
     while (1) {
         cout << "wait msg to send" << endl << flush;
         msg = ReadInQueue(&q_messageToMon);
-        cout << "Send msg to mon: " << msg->GetID() << endl << flush;//msg->ToString() << endl << flush;
+        cout << "Send msg to mon: " << msg->ToString()<< endl << flush;//msg->ToString() << endl << flush;
         rt_mutex_acquire(&mutex_monitor, TM_INFINITE);
         monitor.Write(msg); // The message is deleted with the Write
         rt_mutex_release(&mutex_monitor);
@@ -558,7 +558,7 @@ void Tasks::MoveTask(void *arg) {
         //wait for communication started
         compteurEchec = 0;
         eventReturn = 0;
-        rt_event_wait(&event_comRobotStartEvent, MASK_WAITALL, &eventReturn, EV_ALL, TM_INFINITE);
+        rt_event_wait(&event_comRobotStartEvent, MASK_WAITALL, &eventReturn, EV_ANY, TM_INFINITE);
         //wait for start robot signal
         rt_event_wait(&event_startRobot, MASK_WAITALL, &eventReturn, EV_ANY, TM_INFINITE);
         
@@ -585,7 +585,7 @@ void Tasks::MoveTask(void *arg) {
             
 
         cout << "Start robot (";
-        cout << msg->GetID();
+        cout << msg->ToString();
         cout << ")" << endl;
 
         if(msg->GetID() == MESSAGE_ANSWER_ACK)//robot successfully started
@@ -647,6 +647,10 @@ void Tasks::MoveTask(void *arg) {
             rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
             robotStarted = 0;
             rt_mutex_release(&mutex_robotStarted);
+            
+            rt_mutex_acquire(&mutex_robot, TM_INFINITE);
+                robotStarted = 0;
+            rt_mutex_release(&mutex_robot);
 
             //if stopping on connection lost, send message
             if (compteurEchec >= 3)
@@ -707,7 +711,7 @@ void Tasks::UpdateBatteryLevel()
      {
         rt_event_wait(&event_comRobotStartEvent, EVENT_COMROBOTISSTARTED, &retEvent, EV_ANY, TM_INFINITE);
         rt_task_wait_period(NULL);
-        cout << "Periodic Battery Level update";
+        //cout << "Periodic Battery Level update";
         rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
         rs = robotStarted;
         rt_mutex_release(&mutex_robotStarted);
@@ -726,8 +730,6 @@ void Tasks::UpdateBatteryLevel()
 void Tasks::receiveFromMon()
 {
     Message * msgRcv ; 
-    string move ; 
-    bool stopRobot ;
     bool stopCamera ; 
     
     rt_sem_p(&sem_serverOk, TM_INFINITE);
@@ -759,9 +761,11 @@ void Tasks::receiveFromMon()
                 cout << "received start without WD" << endl;
                 rt_event_signal(&event_startRobot, EVENT_STARTNOWD);
                 break; 
-            case (MESSAGE_ROBOT_STOP): 
-                stopRobot = true ; 
-                break; 
+            case (MESSAGE_ROBOT_RESET):
+                rt_mutex_acquire(&mutex_shr_stopRobot, TM_INFINITE);
+                    shr_stopRobot = 1;
+                rt_mutex_release(&mutex_shr_stopRobot);
+                break;
             case (MESSAGE_CAM_OPEN):
                 //startCamera!
                 rt_sem_p(&sem_startCamera, TM_INFINITE);
@@ -788,10 +792,17 @@ void Tasks::receiveFromMon()
                 break;     
             case (MESSAGE_CAM_POSITION_COMPUTE_STOP): 
                 //calculPosition!STOP
-                shr_calculPosition = 0; 
-                break; 
-            case (MESSAGE_ROBOT_GO_FORWARD || MESSAGE_ROBOT_GO_LEFT || MESSAGE_ROBOT_GO_RIGHT || MESSAGE_ROBOT_STOP):
-                move = msgRcv->GetID() ; 
+                        shr_calculPosition = 0;
+                break;
+            case (MESSAGE_ROBOT_GO_FORWARD):
+            case (MESSAGE_ROBOT_GO_LEFT):
+            case (MESSAGE_ROBOT_GO_RIGHT):
+            case (MESSAGE_ROBOT_STOP):
+            case (MESSAGE_ROBOT_GO_BACKWARD):
+                if (debugTP) cout << "received move order" << endl;
+                rt_mutex_acquire(&mutex_move, TM_INFINITE);
+                move = msgRcv->GetID();
+                rt_mutex_release(&mutex_move);
                 break; 
         }
         delete msgRcv;
@@ -938,6 +949,7 @@ Message * msg;
 
 void Tasks::ThWD()
 {
+    rt_task_set_periodic(NULL, TM_NOW, 1000000000);
     unsigned int WDEventFlag;
     while(1)
     {

@@ -889,6 +889,7 @@ void Tasks::Gest_Img() {
     bool sendImages;
     unsigned int * retEvent;
     Message * msg;
+    rt_task_set_periodic(NULL, TM_NOW, 10000000);
 
 
 
@@ -912,13 +913,13 @@ void Tasks::Gest_Img() {
                     RTIME timeStart = rt_timer_read();
 
                     int computePosLoc = shr_calculPosition;
-
                     rt_mutex_acquire(&mutex_camera, TM_INFINITE);
-                    Img img = camera.Grab();
+                    //need to create new because deleted on message send
+                    Img * img = new Img(camera.Grab());
                     rt_mutex_release(&mutex_camera);
 
                     if (computePosLoc == 1) {
-                        std::list<Position> pos(img.SearchRobot(*shr_arena));
+                        std::list<Position> pos(img->SearchRobot(*shr_arena));
                         if (pos.empty()) {
                             pos.back() = *(new Position()); //fuite de mem ?
                             msg = new MessagePosition(MESSAGE_CAM_POSITION, pos.front());
@@ -927,9 +928,11 @@ void Tasks::Gest_Img() {
                         }
                         WriteInQueue(&q_messageToMon, msg);
                     }
-                    WriteInQueue(&q_messageToMon, new MessageImg(MESSAGE_CAM_IMAGE, &img));
-
-                    rt_task_sleep(rt_timer_ns2ticks(100000) - (rt_timer_read() - timeStart));
+                    WriteInQueue(&q_messageToMon, new MessageImg(MESSAGE_CAM_IMAGE, img));
+                    //rt_task_wait_period(NULL);
+                    //voir comment avoir un timing précis
+                    rt_task_sleep(rt_timer_ns2ticks(100000));
+             
                 } else {
                     shr_stopCamera = 0;
                     rt_mutex_acquire(&mutex_camera, TM_INFINITE);
@@ -948,6 +951,7 @@ void Tasks::Gest_Img() {
                     WriteInQueue(&q_messageToMon, msg);
                 }
             }
+            cout << "cam out while" << endl;
         } else {
 
             msg = new Message(MESSAGE_ANSWER_ACK);

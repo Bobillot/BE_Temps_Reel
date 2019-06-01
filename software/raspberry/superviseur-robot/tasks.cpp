@@ -21,7 +21,7 @@
 // Déclaration des priorités des taches
 #define PRIORITY_TSERVER 30
 #define PRIORITY_TOPENCOMROBOT 20
-#define PRIORITY_TMOVE 20
+#define PRIORITY_TMOVE 40
 #define PRIORITY_TSENDTOMON 22
 #define PRIORITY_TRECEIVEFROMMON 25
 #define PRIORITY_TSTARTROBOT 20
@@ -138,7 +138,7 @@ void Tasks::Init() {
         cerr << "Error event create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
-     cout << "Events created successfully" << endl << flush;
+    cout << "Events created successfully" << endl << flush;
 
 
     /**************************************************************************************/
@@ -838,59 +838,82 @@ void Tasks::receiveFromMon() {
 
 void Tasks::Calibration(void *arg) {
     cout << "Start " << __PRETTY_FUNCTION__ << endl << flush;
-    unsigned int mask_find_arena;
+    //unsigned int mask_find_arena;
     unsigned int arena_confirmation;
     Img * image;
     Arena * arena;
     Message * msg;
     MessageImg * msgImg;
     while (1) {
-        rt_event_wait(&event_findArena, MASK_WAITALL, &mask_find_arena, EV_ANY, TM_INFINITE); //EV_ANY (OR), EV_ALL (AND)
+        rt_sem_p(&sem_findArena, TM_INFINITE);
+        //rt_event_wait(&event_findArena, MASK_WAITALL, &mask_find_arena, EV_ANY, TM_INFINITE); //EV_ANY (OR), EV_ALL (AND)
         cout << "find arena" << endl;
-        if (mask_find_arena == EVENT_FINDARENNA) {
 
-            if (debugTP) cout << "[Thread CALIBRATION] Event flag FindArena received";
-            rt_event_clear(&event_envoi, MASK_WAITALL, NULL); //Clear all events
-            if (debugTP) cout << "[Thread CALIBRATION] Sending ENVOISTOP event flag to camera";
-            *image = camera.Grab();
-            if (debugTP) cout << "[Thread CALIBRATION] Capture image";
-            *arena = image->SearchArena();
-            if (debugTP) cout << "[Thread CALIBRATION] Search Arena on the captured image";
-            if (arena->IsEmpty() == true) { //true = no arena found
-                msg = new Message(MESSAGE_ANSWER_NACK);
-                if (debugTP) cout << "[Thread CALIBRATION] NO ARENA FOUND ! Sending message...";
-                WriteInQueue(&q_messageToMon, msg);
-            } else {
-                if (debugTP) cout << "[Thread CALIBRATION] Arena Found";
-                image->DrawArena(*arena);
-                msgImg = new MessageImg(MESSAGE_CAM_IMAGE, image);
-                if (debugTP) cout << "[Thread CALIBRATION] Sending arena-image to monitor";
-                WriteInQueue(&q_messageToMon, msgImg);
-                if (debugTP) cout << "[Thread CALIBRATION] Waiting for confirmation from monitor...";
-                rt_event_wait(&event_arenaValid, MASK_WAITALL, &arena_confirmation, EV_ANY, TM_INFINITE);
-                if (arena_confirmation == EVENT_ARENAOK) {
-                    if (debugTP) cout << "[Thread CALIBRATION] Arena is OK";
-                    rt_mutex_acquire(&mutex_shr_arena, TM_INFINITE);
-                    shr_arena = arena;
-                    rt_mutex_release(&mutex_shr_arena);
+        //clear old arena : 
+        rt_mutex_acquire(&mutex_shr_arena, TM_INFINITE);
+        arena = shr_arena;
+        rt_mutex_release(&mutex_shr_arena);
+        if (arena)
+            delete arena;
 
-                } else {
-                    if (debugTP) cout << "[Thread CALIBRATION] Arena is not OK";
-                    rt_mutex_acquire(&mutex_shr_arena, TM_INFINITE);
-                    shr_arena = NULL;
-                    rt_mutex_release(&mutex_shr_arena);
-                }
-                if (debugTP) cout << "[Thread CALIBRATION] Sending event flag ENVOIRESUME to camera...";
-                rt_event_signal(&event_envoi, EVENT_ENVOIRESUME);
-            }
+        if (debugTP) cout << "[Thread CALIBRATION] Event flag FindArena received" << endl;
+        rt_event_clear(&event_envoi, MASK_WAITALL, NULL); //Stop img sending
+        if (debugTP) cout << "[Thread CALIBRATION] Sending ENVOISTOP event flag to camera" << endl;
+        rt_mutex_acquire(&mutex_camera, TM_INFINITE);
+        if (!camera.IsOpen()) {
+            rt_mutex_release(&mutex_camera);
+            continue;
         }
+        image = new Img(camera.Grab());
+        rt_mutex_release(&mutex_camera);
+        if (debugTP) cout << "[Thread CALIBRATION] Capture image" << endl;
+        arena = new Arena(image->SearchArena());
+        if (debugTP) cout << "[Thread CALIBRATION] Search Arena on the captured image" << endl;
+
+        if (arena->IsEmpty() == true) { //true = no arena found
+            msg = new Message(MESSAGE_ANSWER_NACK);
+            if (debugTP) cout << "[Thread CALIBRATION] NO ARENA FOUND ! Sending message..." << endl;
+            WriteInQueue(&q_messageToMon, msg);
+        }
+        else {
+            //clear queu from mon in case no arean found
+            rt_event_clear(&event_arenaValid, MASK_WAITALL, NULL);
+            if (debugTP) cout << "[Thread CALIBRATION] Arena Found" << endl;
+            image->DrawArena(*arena);
+            msgImg = new MessageImg(MESSAGE_CAM_IMAGE, image);
+            if (debugTP) cout << "[Thread CALIBRATION] Sending arena-image to monitor" << endl;
+            WriteInQueue(&q_messageToMon, msgImg);
+            if (debugTP) cout << "[Thread CALIBRATION] Waiting for confirmation from monitor..." << endl;
+            rt_event_wait(&event_arenaValid, MASK_WAITALL, &arena_confirmation, EV_ANY, TM_INFINITE);
+            if (arena_confirmation == EVENT_ARENAOK) {
+                if (debugTP) cout << "[Thread CALIBRATION] Arena is OK" << endl;
+                rt_mutex_acquire(&mutex_shr_arena, TM_INFINITE);
+                shr_arena = arena;
+                rt_mutex_release(&mutex_shr_arena);
+
+            }
+            else {
+                if (debugTP) cout << "[Thread CALIBRATION] Arena is not OK" << endl;
+                rt_mutex_acquire(&mutex_shr_arena, TM_INFINITE);
+                shr_arena = NULL;
+                rt_mutex_release(&mutex_shr_arena);
+            }
+
+
+        }
+        rt_event_clear(&event_arenaValid, MASK_WAITALL, NULL);
+
+        if (debugTP) cout << "[Thread CALIBRATION] Sending event flag ENVOIRESUME to camera..." << endl;
+        rt_event_signal(&event_envoi, EVENT_ENVOIRESUME);
+        
+        delete image;
     }
 }
 
 void Tasks::Gest_Img() {
     cout << "Start " << __PRETTY_FUNCTION__ << endl << flush;
     int err;
-    SRTIME timeToWait; 
+    SRTIME timeToWait;
     bool sendImages;
     bool stopCamera;
     unsigned int retEvent;
@@ -933,15 +956,13 @@ void Tasks::Gest_Img() {
                     cout << "Grabbed image" << endl;
 
                     if (computePosLoc == 1) {
-                        
+
                         rt_mutex_acquire(&mutex_shr_arena, TM_INFINITE);
-                        if(shr_arena) //test if arena init
+                        if (shr_arena) //test if arena init
                         {
                             cout << "arena not null" << endl;
-                            pos = new std::list<Position>(img->SearchRobot(*shr_arena));   
-                        }
-                        else
-                        {
+                            pos = new std::list<Position>(img->SearchRobot(*shr_arena));
+                        } else {
                             pos = new std::list<Position>();
                         }
                         if (pos->empty() || !shr_arena) {
@@ -949,13 +970,14 @@ void Tasks::Gest_Img() {
                             msg = new MessagePosition(MESSAGE_CAM_POSITION, pos->front());
                         } else {
                             msg = new MessagePosition(MESSAGE_CAM_POSITION, pos->front());
+                            img->DrawAllRobots(*pos);
                         }
                         rt_mutex_release(&mutex_shr_arena);
                         WriteInQueue(&q_messageToMon, msg);
                     }
                     WriteInQueue(&q_messageToMon, new MessageImg(MESSAGE_CAM_IMAGE, img));
-                    
-                    timeToWait = 100000000-(rt_timer_read()-timeStart);
+
+                    timeToWait = 100000000 - (rt_timer_read() - timeStart);
                     rt_task_sleep(rt_timer_ns2ticks(timeToWait > 0 ? timeToWait : 100000000));
 
                 } else {

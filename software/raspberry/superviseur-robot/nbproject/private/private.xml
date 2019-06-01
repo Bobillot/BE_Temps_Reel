@@ -9,9 +9,11 @@
         <group>
             <file>file:/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/tasks.h</file>
             <file>file:/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/commonitor.h</file>
+            <file>file:/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/camera.cpp</file>
             <file>file:/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/commonitor.cpp</file>
             <file>file:/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/messages.h</file>
             <file>file:/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/main.cpp</file>
+            <file>file:/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/camera.h</file>
             <file>file:/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/tasks.cpp</file>
             <file>file:/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/messages.cpp</file>
             <file>file:/home/herail/4A/BE_Temps_Reel/software/raspberry/superviseur-robot/lib/comrobot.cpp</file>

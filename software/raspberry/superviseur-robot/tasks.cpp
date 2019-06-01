@@ -138,6 +138,7 @@ void Tasks::Init() {
         cerr << "Error event create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
+     cout << "Events created successfully" << endl << flush;
 
 
     /**************************************************************************************/
@@ -262,7 +263,7 @@ void Tasks::Init() {
     /**************************************************************************************/
     /* Message queues creation                                                            */
     /**************************************************************************************/
-    if ((err = rt_queue_create(&q_messageToMon, "q_messageToMon", sizeof (Message*)*3000, Q_UNLIMITED, Q_FIFO)) < 0) {
+    if ((err = rt_queue_create(&q_messageToMon, "q_messageToMon", sizeof (Message*)*50000, Q_UNLIMITED, Q_FIFO)) < 0) {
         cerr << "Error msg queue create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
@@ -502,8 +503,7 @@ void Tasks::OpenComRobot(void *arg) {
                 while (err < 0) {
                     //restart connection 
                     rt_mutex_acquire(&mutex_robot, TM_INFINITE);
-                    if (debugTP)
-                        err = robot.Open();
+                    err = robot.Open();
                     cout << err << endl;
                     rt_mutex_release(&mutex_robot);
                     cout << "end of loop" << endl;
@@ -892,9 +892,8 @@ void Tasks::Gest_Img() {
     int err;
     bool sendImages;
     bool stopCamera;
-    unsigned int * retEvent;
+    unsigned int retEvent;
     Message * msg;
-    rt_task_set_periodic(NULL, TM_NOW, 10000000);
 
 
 
@@ -916,21 +915,20 @@ void Tasks::Gest_Img() {
                 rt_mutex_acquire(&mutex_shr_stopCam, TM_INFINITE);
                 stopCamera = shr_stopCamera;
                 rt_mutex_release(&mutex_shr_stopCam);
-                if (stopCamera == 0) 
-                {
+                if (stopCamera == 0) {
                     cout << "Waiting event start envoi" << endl;
-                    rt_event_wait(&event_envoi, EVENT_ENVOIRESUME, retEvent, EV_ANY, TM_INFINITE); //peut etre remplacer null_ptr par un unsigned long à définir dans Gest_Img()
-                     cout << "Passed event start envoi" << endl;
+                    rt_event_wait(&event_envoi, EVENT_ENVOIRESUME, &retEvent, EV_ANY, TM_INFINITE); //peut etre remplacer null_ptr par un unsigned long à définir dans Gest_Img()
+                    cout << "Passed event start envoi" << endl;
                     RTIME timeStart = rt_timer_read();
-                    
+
                     int computePosLoc = shr_calculPosition;
-                    
+
                     cout << "Grabbing image" << endl;
                     rt_mutex_acquire(&mutex_camera, TM_INFINITE);
                     //need to create new because deleted on message send
                     Img * img = new Img(camera.Grab());
                     rt_mutex_release(&mutex_camera);
-                     cout << "Grabbed image" << endl;
+                    cout << "Grabbed image" << endl;
 
                     if (computePosLoc == 1) {
                         std::list<Position> pos(img->SearchRobot(*shr_arena));
@@ -945,12 +943,10 @@ void Tasks::Gest_Img() {
                     WriteInQueue(&q_messageToMon, new MessageImg(MESSAGE_CAM_IMAGE, img));
                     //rt_task_wait_period(NULL);
                     //voir comment avoir un timing précis
-                    rt_task_sleep(rt_timer_ns2ticks(100000));
+                    rt_task_sleep(rt_timer_ns2ticks(100000000));
 
-                }
-                else 
-                {
-                    cout << "Stopping cam" << endl; 
+                } else {
+                    cout << "Stopping cam" << endl;
                     rt_mutex_acquire(&mutex_shr_stopCam, TM_INFINITE);
                     shr_stopCamera = false;
                     rt_mutex_release(&mutex_shr_stopCam);
@@ -972,8 +968,7 @@ void Tasks::Gest_Img() {
                 }
             }
             cout << "cam out while" << endl;
-        }
-        else {
+        } else {
             msg = new Message(MESSAGE_ANSWER_NACK);
             WriteInQueue(&q_messageToMon, msg);
         }

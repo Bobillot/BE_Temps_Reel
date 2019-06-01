@@ -895,6 +895,7 @@ void Tasks::Gest_Img() {
     bool stopCamera;
     unsigned int retEvent;
     Message * msg;
+    std::list<Position> * pos;
 
 
 
@@ -932,13 +933,24 @@ void Tasks::Gest_Img() {
                     cout << "Grabbed image" << endl;
 
                     if (computePosLoc == 1) {
-                        std::list<Position> pos(img->SearchRobot(*shr_arena));
-                        if (pos.empty()) {
-                            pos.back() = *(new Position()); //fuite de mem ?
-                            msg = new MessagePosition(MESSAGE_CAM_POSITION, pos.front());
-                        } else {
-                            msg = new MessagePosition(MESSAGE_CAM_POSITION, pos.front());
+                        
+                        rt_mutex_acquire(&mutex_shr_arena, TM_INFINITE);
+                        if(shr_arena) //test if arena init
+                        {
+                            cout << "arena not null" << endl;
+                            pos = new std::list<Position>(img->SearchRobot(*shr_arena));   
                         }
+                        else
+                        {
+                            pos = new std::list<Position>();
+                        }
+                        if (pos->empty() || !shr_arena) {
+                            pos->back() = *(new Position()); //fuite de mem ?
+                            msg = new MessagePosition(MESSAGE_CAM_POSITION, pos->front());
+                        } else {
+                            msg = new MessagePosition(MESSAGE_CAM_POSITION, pos->front());
+                        }
+                        rt_mutex_release(&mutex_shr_arena);
                         WriteInQueue(&q_messageToMon, msg);
                     }
                     WriteInQueue(&q_messageToMon, new MessageImg(MESSAGE_CAM_IMAGE, img));
@@ -955,15 +967,6 @@ void Tasks::Gest_Img() {
                     camera.Close();
                     rt_mutex_release(&mutex_camera);
                     sendImages = false;
-                    //                    if(err!=-1)
-                    //                    {
-                    //                        sendImages = false;
-                    //                        msg = new Message(MESSAGE_ANSWER_ACK);
-                    //                    }
-                    //                    else
-                    //                    {
-                    //                        msg = new Message(MESSAGE_ANSWER_NACK);
-                    //                    }
                     msg = new Message(MESSAGE_ANSWER_ACK);
                     WriteInQueue(&q_messageToMon, msg);
                 }

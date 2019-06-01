@@ -21,9 +21,9 @@
 // Déclaration des priorités des taches
 #define PRIORITY_TSERVER 30
 #define PRIORITY_TOPENCOMROBOT 20
-#define PRIORITY_TMOVE 40
-#define PRIORITY_TSENDTOMON 22
-#define PRIORITY_TRECEIVEFROMMON 25
+#define PRIORITY_TMOVE 35
+#define PRIORITY_TSENDTOMON 40
+#define PRIORITY_TRECEIVEFROMMON 33
 #define PRIORITY_TSTARTROBOT 20
 #define PRIORITY_TCAMERA 21
 #define PRIORITY_TBAT 19
@@ -86,6 +86,7 @@
 void Tasks::Init() {
     int status;
     int err;
+    camera.SetSize(captureSize::xs);
     /**************************************************************************************/
     /* 	Event creation                                                                   */
     /**************************************************************************************/
@@ -648,7 +649,7 @@ void Tasks::MoveTask(void *arg) {
                 cout << endl << flush;
 
                 //check if message received
-                if (msg->GetID() != MESSAGE_ANSWER_ACK)
+                if (msg->GetID() != MESSAGE_ANSWER_ACK && eventReturn == EVENT_STARTWD)
                     compteurEchec++;
                 else
                     compteurEchec = 0;
@@ -678,6 +679,7 @@ void Tasks::MoveTask(void *arg) {
 
             //if stopping on connection lost, send message
             if (compteurEchec >= 3) {
+                cout << "com lost from robot" << endl;
                 rt_event_signal(&event_comRobot, EVENT_COMROBOTLOST);
                 //So that it blocks quickly enough
                 rt_event_clear(&event_comRobotStartEvent, MASK_WAITALL, NULL);
@@ -740,6 +742,7 @@ void Tasks::UpdateBatteryLevel() {
         rs = robotStarted;
         rt_mutex_release(&mutex_robotStarted);
         if (rs == 1) {
+            
 
             //                    msgAnswer = new Message(MESSAGE_ANSWER_ROBOT_TIMEOUT);
             //
@@ -748,8 +751,9 @@ void Tasks::UpdateBatteryLevel() {
             rt_mutex_acquire(&mutex_robot, TM_INFINITE);
             level = (MessageBattery*) robot.Write(ComRobot::GetBattery());
             rt_mutex_release(&mutex_robot);
-
-            WriteInQueue(&q_messageToMon, level);
+            
+            if(!level->CompareID(MESSAGE_ANSWER_ROBOT_TIMEOUT) && !level->CompareID(MESSAGE_ANSWER_COM_ERROR))
+                WriteInQueue(&q_messageToMon, level);
         }
         cout << endl << flush;
     }

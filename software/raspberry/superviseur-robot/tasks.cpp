@@ -890,6 +890,7 @@ void Tasks::Calibration(void *arg) {
 void Tasks::Gest_Img() {
     cout << "Start " << __PRETTY_FUNCTION__ << endl << flush;
     int err;
+    SRTIME timeToWait; 
     bool sendImages;
     bool stopCamera;
     unsigned int retEvent;
@@ -941,9 +942,9 @@ void Tasks::Gest_Img() {
                         WriteInQueue(&q_messageToMon, msg);
                     }
                     WriteInQueue(&q_messageToMon, new MessageImg(MESSAGE_CAM_IMAGE, img));
-                    //rt_task_wait_period(NULL);
-                    //voir comment avoir un timing précis
-                    rt_task_sleep(rt_timer_ns2ticks(100000000));
+                    
+                    timeToWait = 100000000-(rt_timer_read()-timeStart);
+                    rt_task_sleep(rt_timer_ns2ticks(timeToWait > 0 ? timeToWait : 100000000));
 
                 } else {
                     cout << "Stopping cam" << endl;

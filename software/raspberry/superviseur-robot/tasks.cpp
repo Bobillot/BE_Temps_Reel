@@ -774,6 +774,11 @@ void Tasks::receiveFromMon() {
             case (MESSAGE_MONITOR_LOST):
                 delete msgRcv;
                 cout << "Connection with monitor lost" << endl;
+                shr_calculPosition = 0;
+                rt_event_signal(&event_comRobot, EVENT_COMROBOTSTOP);
+                rt_mutex_acquire(&mutex_shr_stopCam, TM_INFINITE);
+                shr_stopCamera = false;
+                rt_mutex_release(&mutex_shr_stopCam);
                 exit(10);
             case (MESSAGE_ROBOT_COM_OPEN):
                 //comRobot!START

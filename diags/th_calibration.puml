@@ -2,29 +2,20 @@
 
 skinparam monochrome true
 
-floating note left  
-    Porposition modif modelisation
-
-    arena shared var 
-
-    Un seul thread pour le calcul de position et l'envoi d'images 
-end note
-
 start
 
 while ( )
     :findArena?;
 
     :Envoi!STOP;
-    note : eventflag 
+    note : Event pour mettre en pause / reprendre le flux d'images
 
     :img = Camera.Grab();
-    note : assumes function does the mutex part
 
     :arenaLoc = Img::SearchArena(img);
 
     if (arena) then (null)
-        :msg = new Message(NO_ACK);
+        :msg = new Message(MESSAGE_ANSWER_NACK);
         :msgToMon!msg;
     else
         :img = Img::DrawArena(arena);
@@ -38,8 +29,7 @@ while ( )
     endif
 
     :Envoi!RESUME;
-
-
+    
 endwhile
 
 stop

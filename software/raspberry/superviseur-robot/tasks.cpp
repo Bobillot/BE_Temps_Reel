@@ -885,7 +885,6 @@ void Tasks::Calibration(void *arg) {
             WriteInQueue(&q_messageToMon, msg);
         }
         else {
-            //clear queu from mon in case no arean found
             rt_event_clear(&event_arenaValid, MASK_WAITALL, NULL);
             if (debugTP) cout << "[Thread CALIBRATION] Arena Found" << endl;
             image->DrawArena(*arena);

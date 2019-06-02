@@ -17,11 +17,10 @@ while  ( )
 
     else (OTHER)
         :comRobotStartEvent!STOP;
-        :stopRobot = 1;
         if (comRobotEventFlag) then (LOST) 
-            :msg = new Message(COMMUNICATION_LOST);
+            :msg = new Message(MESSAGE_ANSWER_ROBOT_TIMEOUT);
         else (STOP)
-            
+            :stopRobot = 1;
             :robot.Close();
             :msgSend = new Message(MESSAGE_COM_CLOSED);
 

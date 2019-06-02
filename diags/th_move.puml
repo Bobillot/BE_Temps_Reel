@@ -6,76 +6,61 @@ title th_move \n
 
 start
 
-floating note right
-compteurEchec : int
-stopEvent : int //pe modifier avec event flag xenomai polling
-endnote
-
 while ()
     :comRobotStartEvent?START;
-    note : event flag
     :compteurEchec = 0;
 
     :startRobot?eventFlags;
-    note
-    eventFlags : sans WD, avec WD
-    endnote
 
     if (eventFlags) then (WD)
         :eventWD!START;
-    note : passe la val de eventWD à START
         :ret = ComRobot::Write(StartWithWD());
     else (NOWD)
-    :ret = ComRobot::Write(StartWithoutWD());
+        :ret = ComRobot::Write(StartWithoutWD());
     endif
-    
-    if (ret) then (1)
-    
-    :msg = new Message(ACK);
 
-    :msgToMon!msg;
+    if (ret) then (OK)
 
-    :reset(EventFlags);
+        :msg = new Message(ACK);
+        :msgToMon!msg;
+        :reset(EventFlags);
+        note : Consume startRobot event
 
-    while (compteurEchec < 3 && stopRobot == 0) is (true)
-        :wait 100ms;
-        if (move==STOP) then (yes)
-            :err = robot.Write(Stop());
-        elseif (move==GAUCHE) then (yes)
-            :err = robot.Write(GoLeft());
-        elseif (move==DROITE) then (yes)
-            :err = robot.Write(GoRight());
-        elseif (move==AVANT) then (yes)
-            :err = robot.Write(GoForward());
-        elseif (move==ARRIERE) then (yes)
-            :err = robot.Write(GoBackward());
+        while (compteurEchec < 3 && stopRobot == 0) is (true)
+            :wait 100ms;
+            if (move==STOP) then (yes)
+                :err = robot.Write(Stop());
+            elseif (move==GAUCHE) then (yes)
+                :err = robot.Write(GoLeft());
+            elseif (move==DROITE) then (yes)
+                :err = robot.Write(GoRight());
+            elseif (move==AVANT) then (yes)
+                :err = robot.Write(GoForward());
+            elseif (move==ARRIERE) then (yes)
+                :err = robot.Write(GoBackward());
+            endif
+            if (err < 0 && watchdogStarted) then
+                :compteurEchec++;
+            endif
+        endwhile (false)
+        :eventWD!STOP;
+        :stopRobot = 0;
+
+        if (compteurEchec > 3) then (true)
+            ':comRobotStartEvent!STOP;
+            'note
+            '    evite de rerentrer dans le début du thread
+            '    si on sait qu'on coupe la com à cause du temps de traitement
+            '    de th_com_robot
+            'endnote
+            :comRobotStartEvent!LOST;
+        else (false)
         endif
-        if (err) then (!ROBOT_OK)
-            :compteurEchec++;
-        endif
-    endwhile (false)
-    :eventWD!STOP;
-    note : passe la val de eventWD à STOP
-:stopRobot = 0;
-note : shrd var, reset après conso event
-
-if (compteurEchec > 3) then (true)
-    ':comRobotStartEvent!STOP;
-    'note 
-    '    evite de rerentrer dans le début du thread 
-    '    si on sait qu'on coupe la com à cause du temps de traitement 
-    '    de th_com_robot
-    'endnote
-    :comRobotStartEvent!LOST;
-else (false)
-endif
-else (0)
-    :msg = new Message(NACK);
-
-    :msgToMon!msg;
-
-    :reset(EventFlags);
-endif
+    else (0)
+        :msg = new Message(MESSAGE_ANSWER_NACK);
+        :msgToMon!msg;
+        :reset(EventFlags);
+    endif
 endwhile
 stop
 @enduml

@@ -1,0 +1,77 @@
+@startuml th_gest_image_mod
+
+skinparam monochrome true
+
+floating note left
+Proposition modif modelisation
+
+arena shared var
+
+Fermeture de la camera dans ce thread ==> attente de la fin des calculs lors du stop
+
+
+Variables :
+sendImages : bool
+end note
+
+start
+
+while ( )
+
+    :startCamera?;
+
+    :err = camera.Open();
+    if(err) then (camera_ok)
+
+        :msg = new Message(MESSAGE_ANSWER_ACK);
+        :msgToMon!msg;
+
+        :sendImages = true;
+
+        while (sendImages) is (true)
+            if(stopCamera) then (false)
+                :Envoi?RESUME;
+
+                :timeStart = now();
+
+                :computePosLoc = computePosShared;
+
+                :img = Camera.Grab();
+
+                if (computePosLoc) then (true)
+                        :pos = Img::SearchRobot(img,arena);
+                        if (pos) then
+                            :msg = MessagePosition(pos);
+                        else (null)
+                            :pos = (-1;-1)
+                            :msg = MessagePosition(pos);
+                        endif
+                        :msgToMon!msg;
+                else (false)
+
+                endif
+
+                :msgToMon!img;
+
+                :wait (100ms - (now() - timeStart);
+
+                'event stopCamera reçu
+            else (true)
+                :stopCamera = false;
+                :camera.Close();
+                :sendImages = false;
+                :msg = new Message(MESSAGE_ANSWER_ACK);
+                :msgToMon!msg;
+            endif
+        endwhile (false)
+
+    else (!camera_ok)
+
+        :msg = new Message(MESSAGE_ANSWER_NACK);
+        :msgToMon!msg;
+    endif
+endwhile
+
+stop
+
+@enduml
